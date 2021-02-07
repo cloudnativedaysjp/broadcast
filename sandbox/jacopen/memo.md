@@ -1,7 +1,6 @@
 Setup OBS, Desktop environment and NVIDIA Driver for Ubuntu 20.04
 =================================================================
 
-````````oi
 ```
 sudo add-apt-repository -y ppa:obsproject/obs-studio
 sudo apt-get update
