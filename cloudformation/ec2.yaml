@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create EC2 Instance
+Parameters:
+  InstanceType:
+    Description: GPU EC2 instance type
+    Type: String
+    Default: g4dn.xlarge
+    AllowedValues:
+    - g4dn.xlarge
+    - g4dn.x2large
+    ConstraintDescription: must be a valid EC2 instance type
+  KeyName: 
+    Description : Name of an existing EC2 KeyPair.
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription : Can contain only ASCII characters.
+  SSHLocation:
+    Description: IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+Description: Create EC2 Instance
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-003f0e2188de61c84
+      InstanceType: !Ref InstanceType
+      #SubnetId: !ImportValue broadcast-test-vpc-PublicSubnet1A
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          SnapshotId: snap-05df139d1247696d4
+          VolumeSize: 100
+          VolumeType: gp2
+          # Iops: 300 (The parameter iops is not supported for gp2 volumes. )
+          DeleteOnTermination: false
+      Tags:
+      - Key: Name
+        Value: cloudformation-ubuntu-latestAMI
+      KeyName: !Ref KeyName
+      #SecurityGroupIds:
+      #- !GetAtt "InstanceSecurityGroup.GroupId"
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet: 
+          - !GetAtt "InstanceSecurityGroup.GroupId"
+        SubnetId: !ImportValue broadcast-test-vpc-PublicSubnet1A
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo passwd -u ubuntu
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: connect with ssh 
+      VpcId: !ImportValue broadcast-test-vpc-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: 5900
+          ToPort: 5900
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: udp
+          FromPort: 5900
+          ToPort: 5900
+          CidrIp: !Ref SSHLocation
