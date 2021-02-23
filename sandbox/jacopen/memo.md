@@ -8,6 +8,7 @@ sudo apt-get install -y lightdm
 # ↑lightdmを選択。 インストール自動化するときはここの選択操作を自動化どうやるか要調査
 
 sudo apt-get install -y ubuntu-drivers-common  nvidia-driver-450 ocl-icd-libopencl1 opencl-headers clinfo obs-studio ffmpeg ubuntu-desktop x11vnc net-tools
+sudo nvidia-xconfig
 
 #dreamkast のところはVNC接続時に使うパスワード。自動化の時は環境変数で渡した方がいいかも
 sudo x11vnc -storepasswd dreamkast /etc/.vncpasswd  
