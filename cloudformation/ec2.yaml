@@ -28,21 +28,17 @@ Resources:
     Properties: 
       ImageId: ami-003f0e2188de61c84
       InstanceType: !Ref InstanceType
-      #SubnetId: !ImportValue broadcast-test-vpc-PublicSubnet1A
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
         Ebs:
-          SnapshotId: snap-05df139d1247696d4
+          SnapshotId: snap-02a5e25d4ee8fe0c5
           VolumeSize: 100
           VolumeType: gp2
-          # Iops: 300 (The parameter iops is not supported for gp2 volumes. )
           DeleteOnTermination: false
       Tags:
       - Key: Name
         Value: cloudformation-ubuntu-latestAMI
       KeyName: !Ref KeyName
-      #SecurityGroupIds:
-      #- !GetAtt "InstanceSecurityGroup.GroupId"
       NetworkInterfaces:
       - AssociatePublicIpAddress: "true"
         DeviceIndex: "0"
@@ -70,4 +66,8 @@ Resources:
         - IpProtocol: udp
           FromPort: 5900
           ToPort: 5900
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: 4444
+          ToPort: 4444
           CidrIp: !Ref SSHLocation
