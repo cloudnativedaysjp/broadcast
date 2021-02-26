@@ -31,7 +31,7 @@ Resources:
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
         Ebs:
-          SnapshotId: snap-02a5e25d4ee8fe0c5
+          SnapshotId: snap-0eee12b91acc42bf2
           VolumeSize: 100
           VolumeType: gp2
           DeleteOnTermination: false
