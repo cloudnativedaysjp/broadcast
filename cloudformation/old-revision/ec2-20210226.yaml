@@ -1,11 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Create EC2 Instance
 Parameters:
-  EC2Name:
-    Description: A neme of the EC2 instances
-    Type: String
-    MinLength: '1'
-    MaxLength: '50'
   InstanceType:
     Description: GPU EC2 instance type
     Type: String
@@ -31,7 +26,7 @@ Resources:
   MyEC2Instance:
     Type: AWS::EC2::Instance
     Properties: 
-      ImageId: ami-0b20b06c43eed2dc2
+      ImageId: ami-003f0e2188de61c84
       InstanceType: !Ref InstanceType
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
@@ -42,7 +37,7 @@ Resources:
           DeleteOnTermination: false
       Tags:
       - Key: Name
-        Value: !Ref EC2Name
+        Value: cloudformation-ubuntu-latestAMI
       KeyName: !Ref KeyName
       NetworkInterfaces:
       - AssociatePublicIpAddress: "true"
