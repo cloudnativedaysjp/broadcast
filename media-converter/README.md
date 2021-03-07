@@ -11,7 +11,6 @@ python volume_changer.py audio_test audio_test_max
 
 「編集後の動画データを格納するdirectory名」で指定したdirectoryがない場合は作成されます。
 
-# 使用python version
+# 検証時python version
 Python 2.7.16
-
-3/8中にpython3系で動くようにします。。。
+Python 3.9.2
