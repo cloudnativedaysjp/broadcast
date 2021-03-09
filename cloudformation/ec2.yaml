@@ -1,8 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Create EC2 Instance
 Parameters:
+  VPCStackName:
+    Description: A name of the VPC Stack
+    Type: String
+    MinLength: '1'
+    MaxLength: '50'
   EC2Name:
-    Description: A neme of the EC2 instances
+    Description: A name of the EC2 instances
     Type: String
     MinLength: '1'
     MaxLength: '50'
@@ -48,31 +53,9 @@ Resources:
       - AssociatePublicIpAddress: "true"
         DeviceIndex: "0"
         GroupSet: 
-          - !GetAtt "InstanceSecurityGroup.GroupId"
-        SubnetId: !ImportValue broadcast-test-vpc-PublicSubnet1A
+          - { "Fn::ImportValue": !Sub "${VPCStackName}-InstanceSecurityGroup" }
+        SubnetId: { "Fn::ImportValue": !Sub "${VPCStackName}-PublicSubnet1A" }
       UserData:
         Fn::Base64: |
           #!/bin/bash
           sudo passwd -u ubuntu
-  InstanceSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: connect with ssh 
-      VpcId: !ImportValue broadcast-test-vpc-VPCID
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: 5900
-          ToPort: 5900
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: udp
-          FromPort: 5900
-          ToPort: 5900
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: 4444
-          ToPort: 4444
-          CidrIp: !Ref SSHLocation
