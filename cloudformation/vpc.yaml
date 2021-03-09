@@ -112,7 +112,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: connect with ssh
-      VpcId: Ref MyFirstVPC
+      VpcId: !Ref MyFirstVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
