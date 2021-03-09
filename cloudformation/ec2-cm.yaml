@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Create EC2 Instance
 Parameters:
+  VPCStackName:
+    Description: A name of the VPC Stack
+    Type: String
+    MinLength: '1'
+    MaxLength: '50'
+  EC2Name:
+    Description: A name of the EC2 instances
+    Type: String
+    MinLength: '1'
+    MaxLength: '50'
   InstanceType:
     Description: GPU EC2 instance type
     Type: String
@@ -13,20 +23,12 @@ Parameters:
     Description : Name of an existing EC2 KeyPair.
     Type: AWS::EC2::KeyPair::KeyName
     ConstraintDescription : Can contain only ASCII characters.
-  SSHLocation:
-    Description: IP address range that can be used to SSH to the EC2 instances
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
 Description: Create EC2 Instance
 Resources:
   MyEC2Instance:
     Type: AWS::EC2::Instance
     Properties: 
-      ImageId: ami-003f0e2188de61c84
+      ImageId: ami-0b20b06c43eed2dc2
       InstanceType: !Ref InstanceType
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
@@ -37,37 +39,26 @@ Resources:
           DeleteOnTermination: false
       Tags:
       - Key: Name
-        Value: cloudformation-ubuntu-latestAMI
+        Value: !Ref EC2Name
       KeyName: !Ref KeyName
       NetworkInterfaces:
       - AssociatePublicIpAddress: "true"
         DeviceIndex: "0"
         GroupSet: 
-          - !GetAtt "InstanceSecurityGroup.GroupId"
-        SubnetId: !ImportValue broadcast-test-vpc-PublicSubnet1A
+          - { "Fn::ImportValue": !Sub "${VPCStackName}-InstanceSecurityGroup" }
+          - !Ref InstanceSecurityGroupForCM
+        SubnetId: { "Fn::ImportValue": !Sub "${VPCStackName}-PublicSubnet1A" }
       UserData:
         Fn::Base64: |
           #!/bin/bash
           sudo passwd -u ubuntu
-  InstanceSecurityGroup:
+  InstanceSecurityGroupForCM:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: connect with ssh 
-      VpcId: !ImportValue broadcast-test-vpc-VPCID
+      GroupDescription: connect with RTMP
+      VpcId: { "Fn::ImportValue": !Sub "${VPCStackName}-VPCID" }
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: 5900
-          ToPort: 5900
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: udp
-          FromPort: 5900
-          ToPort: 5900
-          CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
-          FromPort: 4444
-          ToPort: 4444
-          CidrIp: !Ref SSHLocation
+          FromPort: 31935
+          ToPort: 31935
+          CidrIp: 0.0.0.0/0
