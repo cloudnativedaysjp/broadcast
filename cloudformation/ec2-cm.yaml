@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create EC2 Instance
+Parameters:
+  VPCStackName:
+    Description: A name of the VPC Stack
+    Type: String
+    MinLength: '1'
+    MaxLength: '50'
+  EC2Name:
+    Description: A name of the EC2 instances
+    Type: String
+    MinLength: '1'
+    MaxLength: '50'
+  InstanceType:
+    Description: GPU EC2 instance type
+    Type: String
+    Default: g4dn.xlarge
+    AllowedValues:
+    - g4dn.xlarge
+    - g4dn.x2large
+    ConstraintDescription: must be a valid EC2 instance type
+  KeyName: 
+    Description : Name of an existing EC2 KeyPair.
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription : Can contain only ASCII characters.
+Description: Create EC2 Instance
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-0b20b06c43eed2dc2
+      InstanceType: !Ref InstanceType
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          SnapshotId: snap-02a5e25d4ee8fe0c5
+          VolumeSize: 100
+          VolumeType: gp2
+          DeleteOnTermination: false
+      Tags:
+      - Key: Name
+        Value: !Ref EC2Name
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet: 
+          - { "Fn::ImportValue": !Sub "${VPCStackName}-InstanceSecurityGroup" }
+          - !Ref InstanceSecurityGroupForCM
+        SubnetId: { "Fn::ImportValue": !Sub "${VPCStackName}-PublicSubnet1A" }
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          sudo passwd -u ubuntu
+  InstanceSecurityGroupForCM:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: connect with RTMP
+      VpcId: { "Fn::ImportValue": !Sub "${VPCStackName}-VPCID" }
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 31935
+          ToPort: 31935
+          CidrIp: 0.0.0.0/0
