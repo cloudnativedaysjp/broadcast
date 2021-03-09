@@ -112,7 +112,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: connect with ssh
-      VpcId: !ImportValue broadcast-test-vpc-VPCID
+      VpcId: { "Fn::ImportValue": !Sub "${VPCStackName}-VPCID" }
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
