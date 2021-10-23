@@ -4,7 +4,7 @@ echo "User is ${Args1}"
 
 
 ## IP Setting
-New-NetIPAddress -InterfaceAlias "Ethernet1" -AddressFamily IPv4 -IPAddress ${Args2} -PrefixLength 24 -DefaultGateway ${Args3}
+New-NetIPAddress -InterfaceAlias "イーサネット" -AddressFamily IPv4 -IPAddress ${Args2} -PrefixLength 24 -DefaultGateway ${Args3}
 
 ## Cortana Uninstall
 Get-AppxPackage -allusers Microsoft.549981C3F5F10 | Remove-AppxPackage
