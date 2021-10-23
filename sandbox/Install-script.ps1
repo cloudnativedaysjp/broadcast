@@ -1,10 +1,10 @@
-Param($Args1,$Args2,$Args3)
+Param($Args1,$Args2,$Args3,$Args4)
 
 echo "User is ${Args1}"
 
 
 ## IP Setting
-New-NetIPAddress -InterfaceAlias "イーサネット" -AddressFamily IPv4 -IPAddress ${Args2} -PrefixLength 24 -DefaultGateway ${Args3}
+New-NetIPAddress -InterfaceIndex ${Args4} -AddressFamily IPv4 -IPAddress ${Args2} -PrefixLength 24 -DefaultGateway ${Args3}
 
 ## Cortana Uninstall
 Get-AppxPackage -allusers Microsoft.549981C3F5F10 | Remove-AppxPackage
@@ -22,7 +22,7 @@ Unblock-File -Path "C:\Users\${Args1}\Downloads\OBS-Studio-27.1.3-Full-x64.zip"
 Expand-Archive -Path "C:\Users\${Args1}\Downloads\OBS-Studio-27.1.3-Full-x64.zip" -DestinationPath "C:\Users\${Args1}\Downloads\obs-studio"
 echo ">>> Copy Program files"
 Copy-Item C:\Users\${Args1}\Downloads\obs-studio 'C:\Program Files\' -Recurse
-## ショートカット作成
+## Create Shortcut
 echo ">>> Create shortcut"
 $WsShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WsShell.CreateShortcut("C:\Users\${Args1}\Desktop\OBS Studio.lnk")
