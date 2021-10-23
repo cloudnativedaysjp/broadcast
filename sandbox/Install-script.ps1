@@ -12,7 +12,7 @@ Get-AppxPackage -allusers Microsoft.549981C3F5F10 | Remove-AppxPackage
 ## Windows Exporter
 Invoke-WebRequest https://github.com/prometheus-community/windows_exporter/releases/download/v0.16.0/windows_exporter-0.16.0-386.exe -UseBasicParsing -OutFile "C:\Users\${Args1}\Downloads\windows-exporter.exe"
 
-Copy-Item "C:\Users\${Args1}\Downloads\windows-exporter.exe" "C:\Users\ry\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" -Recurse
+Copy-Item "C:\Users\${Args1}\Downloads\windows-exporter.exe" "C:\Users\${Args1}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" -Recurse
 
 # obs
 echo ">>> Start downloading OBS Studio in zip format"
