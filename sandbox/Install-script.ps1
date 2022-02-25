@@ -48,4 +48,5 @@ Copy-Item ~\Downloads\obs-ndi\obs-plugins\64bit\* 'C:\Program Files\obs-studio\o
 # NDI-Tools
 echo ">>> Start downloading NDI-Tools in exe format"
 Invoke-RestMethod -ContentType "application/octet-stream" -Uri https://downloads.ndi.tv/Tools/NDI%205%20Tools.exe -OutFile "~\Downloads\NDI-Tools.exe"
+echo ">>>>> 'Please manual install operation'"
 ~\Downloads\NDI-Tools.exe
