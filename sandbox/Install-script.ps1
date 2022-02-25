@@ -1,9 +1,9 @@
-Param($Args1,$Args2,$Args3,$Args4)
+Param($Args1,$Args2)
 
 
 ## IP Setting
 echo ">>> Start ip address setting"
-New-NetIPAddress -InterfaceIndex ${Args4} -AddressFamily IPv4 -IPAddress ${Args2} -PrefixLength 24 -DefaultGateway ${Args3}
+New-NetIPAddress -InterfaceIndex ${Args2} -AddressFamily IPv4 -IPAddress ${Args1} -PrefixLength 24 -DefaultGateway 192.168.199.254
 
 ## Disable firewall
 echo ">>> Disable firewall"
@@ -24,6 +24,10 @@ choco install obs-studio -y
 # install nextcloud-client
 echo ">>> install nextcloud-client"
 choco install nextcloud-client -y
+
+# install vlc-media-player
+echo ">>> install vlc-media-player"
+choco install vlc
 
 ## Windows Exporter
 echo ">>> Setup windows exporter"
