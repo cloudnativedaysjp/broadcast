@@ -27,7 +27,7 @@ choco install nextcloud-client -y
 
 # install vlc-media-player
 echo ">>> install vlc-media-player"
-choco install vlc
+choco install vlc -y
 
 ## Windows Exporter
 echo ">>> Setup windows exporter"
