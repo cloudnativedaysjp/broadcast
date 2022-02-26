@@ -1,9 +1,13 @@
-Param($Args1,$Args2)
+Param($Args1,$Args2,$Args3)
 
 
 ## IP Setting
 echo ">>> Start ip address setting"
-New-NetIPAddress -InterfaceIndex ${Args2} -AddressFamily IPv4 -IPAddress ${Args1} -PrefixLength 24 -DefaultGateway 192.168.199.254
+New-NetIPAddress -InterfaceIndex ${Args2} -AddressFamily IPv4 -IPAddress ${Args1} -PrefixLength 24
+
+## Set hostname
+echo ">>> Set hostname"
+Rename-Computer -NewName ${Args3}
 
 ## Disable firewall
 echo ">>> Disable firewall"
@@ -48,5 +52,5 @@ Copy-Item ~\Downloads\obs-ndi\obs-plugins\64bit\* 'C:\Program Files\obs-studio\o
 # NDI-Tools
 echo ">>> Start downloading NDI-Tools in exe format"
 Invoke-RestMethod -ContentType "application/octet-stream" -Uri https://downloads.ndi.tv/Tools/NDI%205%20Tools.exe -OutFile "~\Downloads\NDI-Tools.exe"
-echo ">>>>> 'Please manual install operation'"
+echo ">>>>> 'Please manual install operation and Restart'"
 ~\Downloads\NDI-Tools.exe
