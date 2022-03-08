@@ -25,6 +25,12 @@ remote-obs-04 | 192.168.199.41 | TUF Gaming | NDIセグメント（内蔵 NIC）
 remote-zoom-04 | 192.168.199.42 | Dynabook | NDIセグメント（内蔵 NIC）
 remote-l2sw-04 | 192.168.199.49 | Netgear SW | 
 
+### モニタリング
+ホスト名 | IPアドレス | 機材 | 備考
+-- | -- | -- | --
+broadcast-monitoring-linux | DHCP | Hyper-V | グローバルセグメント（eth0）
+broadcast-monitoring-linux | 192.168.199.211 | Hyper-V | NDIセグメント（eth1）
+
 ## ネットワーク機器
 ホスト名 | IPアドレス | 機材 | 備考
 -- | -- | -- | --
