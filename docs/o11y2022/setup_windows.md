@@ -1,6 +1,10 @@
 # Windowsを構築する
+## ネットワークに
+DHCPで接続する。
+接続インターフェイスは、USB NICを利用する。
 
 ## 自動構築PS1の流し込み
+
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted
@@ -25,3 +29,8 @@ New-Item -type SymbolicLink ~\Videos\o11y2022 -Value ~\Nextcloud\Broadcast\o11y2
 New-Item -type SymbolicLink ~\AppData\Roaming\obs-studio -Value ~\Nextcloud\Broadcast\o11y2022\Sync\OBS-Settings\${TRACK_DIR}
 ```
 
+## 再起動
+
+## NextCloudのセットアップ
+- ログイン
+- フォルダの指定
