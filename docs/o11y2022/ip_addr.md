@@ -1,29 +1,32 @@
 # IPアドレス・ホスト一覧
 
 ## 配信PC
-ホスト名 | IPアドレス | OS | PC
+ホスト名 | IPアドレス | 機材 | 備考
 -- | -- | -- | --
-broadcast-01 | 192.168.199.21 | Windows10 | TUF Gaming
-broadcast-02 | 192.168.199.22 | Windows10 | TUF Gaming
-broadcast-03 | 192.168.199.23 | Windows10 | TUF Gaming
+broadcast-obs-A | 192.168.199.11 | TUF Gaming | NDIセグメント（内蔵 NIC）
+broadcast-obs-A | DHCP | TUF Gaming | グローバルセグメント（USB NIC）
+broadcast-obs-B | 192.168.199.12 | TUF Gaming | NDIセグメント（内蔵 NIC）
+broadcast-obs-B | DHCP | TUF Gaming | グローバルセグメント（USB NIC）
+broadcast-obs-C | 192.168.199.13 | TUF Gaming | NDIセグメント（内蔵 NIC）
+broadcast-obs-C | DHCP | TUF Gaming | グローバルセグメント（USB NIC）
 
 ## リモート登壇用PC
 ### リモート3
-ホスト名 | IPアドレス | OS | PC
+ホスト名 | IPアドレス | 機材 | 備考
 -- | -- | -- | --
-remote-obs-03 | 192.168.199.31 | Windows10 | TUF Gaming
-remote-rooms-03 | 192.168.199.32 | Windows10 | TUF Gaming
+remote-obs-03 | 192.168.199.31 | TUF Gaming | NDIセグメント（内蔵 NIC）
+remote-zoom-03 | 192.168.199.32 | Dynabook | NDIセグメント（内蔵 NIC）
+remote-l2sw-03 | 192.168.199.39 | Netgear SW | 
 
 ### リモート4
-ホスト名 | IPアドレス | OS | PC
+ホスト名 | IPアドレス | 機材 | 備考
 -- | -- | -- | --
-remote-obs-04 | 192.168.199.41 | Windows10 | TUF Gaming
-remote-rooms-04 | 192.168.199.42 | Windows10 | TUF Gaming
+remote-obs-04 | 192.168.199.41 | TUF Gaming | NDIセグメント（内蔵 NIC）
+remote-zoom-04 | 192.168.199.42 | Dynabook | NDIセグメント（内蔵 NIC）
+remote-l2sw-04 | 192.168.199.49 | Netgear SW | 
 
 ## ネットワーク機器
-ホスト名 | IPアドレス | OS | PC
+ホスト名 | IPアドレス | 機材 | 備考
 -- | -- | -- | --
-| - | 192.168.199.253 | - | Cisco 2960S
-| - | DHCP | - | Cisco Meraki Go
-| - |   | - | Netgear SW(remote-03)
-| - |   | - | Netgear SW(remote-04)
+| - | 192.168.199.253 | Cisco 2960S
+| - | DHCP | Cisco Meraki Go
