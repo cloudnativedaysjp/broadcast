@@ -9,6 +9,8 @@ broadcast-obs-B | 192.168.199.12 | TUF Gaming | NDIセグメント（内蔵 NIC�
 broadcast-obs-B | DHCP | TUF Gaming | グローバルセグメント（USB NIC）
 broadcast-obs-C | 192.168.199.13 | TUF Gaming | NDIセグメント（内蔵 NIC）
 broadcast-obs-C | DHCP | TUF Gaming | グローバルセグメント（USB NIC）
+atem-mini-03 | 192.168.199.23 | ATEM Mini | NDIセグメント
+atem-mini-04 | 192.168.199.24 | ATEM Mini | NDIセグメント
 
 ## リモート登壇用PC
 ### リモート3
