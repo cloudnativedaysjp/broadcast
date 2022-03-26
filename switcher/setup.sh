@@ -10,8 +10,6 @@ echo '/usr/sbin/lightdm' | sudo tee /etc/X11/default-display-manager > /dev/null
 sudo apt-get install -y ubuntu-drivers-common  nvidia-driver-510 ocl-icd-libopencl1 opencl-headers clinfo obs-studio ffmpeg ubuntu-desktop x11vnc net-tools
 sudo nvidia-xconfig
 
-sudo x11vnc -storepasswd dreamkast /etc/.vncpasswd  
-
 sudo sh -c "cat <<EOF > /etc/systemd/system/x11vnc.service
 [Unit]
 Description=x11vnc (Remote access)
@@ -32,5 +30,3 @@ EOF"
 sudo systemctl daemon-reload
 sudo systemctl enable x11vnc
 sudo systemctl start x11vnc
-
-sudo reboot
