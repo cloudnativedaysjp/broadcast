@@ -49,6 +49,14 @@ $ python3 media_checker.py media | jq
 ]
 ```
 
+| Item | Description |
+| :--  | :--  |
+| file_name | チェック対象の動画ファイル名 |
+| resolution_status | OK/NG（デフォルトの判定基準と合致するか）|
+| resolution_type" | SD/HD/FullHD/WQHD/4K（合致しない場合は`NON STANDARD`）|
+| aspect_status | OK/NG（デフォルトの判定基準と合致するか）|
+| aspect_ratio | 判定アスペクト比（合致しない場合は動画のサイズ）|
+
 ### 要件
 - ffmpeg
 - Python3
