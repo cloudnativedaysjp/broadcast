@@ -42,7 +42,7 @@ size_flag = False
 ### 出力例
 ```bash
 # duration_flag: False, size_flag: False
-$ python3 media_checker.py media | jq
+$ python3 media_checker.py --input media | jq
 [
   {
     "file_name": "XX",
@@ -68,6 +68,7 @@ $ python3 media_checker.py media | jq
 ]
 
 # duration_flag: True, size_flag: True
+$ python3 media_checker.py --input XX | jq
 [
   {
     "file_name": "XX",
