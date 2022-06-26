@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import boto3
 import json
 import subprocess
 
@@ -70,12 +71,39 @@ def main():
 
         for filename in str(get_files.stdout.read().decode()).split("\n"):
             if len(filename) != 0:
+                filename = filename.split('/')[-1]
+                filename = filename.split('.')[0]
                 media_width, media_height, media_duration, media_size = _get_media_info(input, filename)
                 media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, filename)
 
                 media_status.append(media_status_dict)
 
-    print(json.dumps(media_status))
+        if args.s3 is not None:
+            s3 = boto3.resource('s3')
+            bucket_name = args.s3[0]
+
+            # specify backet name
+            bucket = s3.Bucket(bucket_name)
+
+            if args.eachfile:
+                for each_media_status in media_status:
+                    object_key_name = "{}.json".format(each_media_status["file_name"])
+
+                    # Create object
+                    obj = bucket.Object(object_key_name)
+
+                    # Put each media file to specified s3 bucket
+                    obj.put(Body=json.dumps(each_media_status))
+
+            else:
+                object_key_name = "merge.json"
+                obj = bucket.Object(object_key_name)
+
+                # Put a file containing all media information to specified s3 bucket
+                obj.put(Body=json.dumps(media_status))
+
+        else:
+            print(json.dumps(media_status))
 
 
 def _get_media_info(input, filename):
@@ -242,11 +270,17 @@ def get_args():
                         type=str,
                         required=True,
                         metavar='INPUT',
-                        help='File or folder to be analyzed.')
+                        help='File or folder name to be analyzed.')
 
     parser.add_argument('--s3',
+                        nargs=1,
+                        type=str,
+                        metavar='S3_BUCKET_NAME',
+                        help='S3 bucket name to store result json data.')
+
+    parser.add_argument('--eachfile',
                         action='store_true',
-                        help='Determine whether to send to S3.')
+                        help='Determine if the results should be combined into one file.')
 
     return parser.parse_args()
 
