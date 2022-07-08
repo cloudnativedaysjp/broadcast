@@ -12,7 +12,7 @@ sys.path.append('../')
 from obswebsocket import obsws, events  # noqa: E402
 
 HOST = os.environ["WSHOST"]
-PORT = 4444
+PORT = os.environ["WSPORT"]
 PASS = os.environ["WSPASS"]
 
 def on_event(message):
