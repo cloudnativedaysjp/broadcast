@@ -21,8 +21,7 @@ class CreateScenesController:
 
     def run(self):
         self.createscene.create_scenecollection(self.sessions.filename)
-        # template から batch リクエストを作成してシーンを構築する
-        self.createscene.create_scene(self.scenedata)
+        self.createscene.create_scene(self.scenedata) # batch リクエストを作成してシーンを構築する
 
 
 if __name__ == "__main__":
