@@ -7,10 +7,8 @@ sudo apt-get update
 yes | sudo DEBIAN_FRONTEND=noninteractive apt-get install -y lightdm
 echo '/usr/sbin/lightdm' | sudo tee /etc/X11/default-display-manager > /dev/null
 
-sudo apt-get install -y ubuntu-drivers-common  nvidia-driver-510 ocl-icd-libopencl1 opencl-headers clinfo obs-studio ffmpeg ubuntu-desktop x11vnc net-tools
+sudo apt-get install -y ubuntu-drivers-common  nvidia-driver-510 ocl-icd-libopencl1 opencl-headers clinfo obs-studio ffmpeg ubuntu-desktop x11vnc net-tools qt5-image-formats-plugins libmng2
 sudo nvidia-xconfig
-
-sudo x11vnc -storepasswd dreamkast /etc/.vncpasswd  
 
 sudo sh -c "cat <<EOF > /etc/systemd/system/x11vnc.service
 [Unit]
@@ -29,8 +27,11 @@ Restart=on-failure
 WantedBy=graphical.target
 EOF"
 
+cd /tmp
+wget https://github.com/obsproject/obs-websocket/releases/download/5.0.0/obs-websocket-5.0.0-Ubuntu64.zip
+unzip obs-websocket-5.0.0-Ubuntu64.zip
+sudo dpkg -i obs-websocket-5.0.0-Ubuntu64.deb
+
 sudo systemctl daemon-reload
 sudo systemctl enable x11vnc
 sudo systemctl start x11vnc
-
-sudo reboot
