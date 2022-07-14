@@ -10,7 +10,7 @@ resource sakuracloud_proxylb_acme "uploader" {
 
 resource "sakuracloud_proxylb" "uploader" {
   name           = "uploader"
-  plan           = 500
+  plan           = 5000
   vip_failover   = true
   sticky_session = true
   gzip           = true
@@ -58,3 +58,4 @@ resource "sakuracloud_proxylb" "uploader" {
   description = "LB for uploader"
   tags        = ["app=uploader", "stage=production"]
 }
+

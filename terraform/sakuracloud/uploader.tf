@@ -20,7 +20,7 @@ resource "sakuracloud_server" "uploader" {
   core        = 2
   memory      = 4
   description = "Nextcloud Sandbox"
-  tags        = ["app=uploader", "stage=production"]
+  tags        = ["app=uploader", "stage=production", "starred"]
 
   network_interface {
     upstream = "shared"
