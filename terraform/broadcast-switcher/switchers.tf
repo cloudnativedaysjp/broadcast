@@ -7,6 +7,9 @@ locals {
     {
       hostname = "switcher02"
     },
+    {
+      hostname = "switcher03"
+    },
   ]
 }
 
