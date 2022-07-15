@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 import asyncio
 import simpleobsws
 import os
@@ -22,7 +22,7 @@ class TempSceneController:
     def __init__(self, filename) -> None:
         self.filename = filename
         self.scenetmpl = SceneTmplModel()
-        self.sessionsmodel = SessionsModel(f"csv/{filename}.csv") # 仮
+        self.sessionsmodel = SessionsModel(f"csv/{filename}") # 仮
         self.scenedata = None # TODO: ここで、 self.scenetmpl と self.sessions から作るべきシーンを dict に起こす
 
     async def create_scenes(self):
@@ -36,13 +36,23 @@ class TempSceneController:
         requests.append(simpleobsws.Request('CreateSceneCollection', {'sceneCollectionName': f'{self.filename}'}))
         requests.append(simpleobsws.Request('CreateScene', {'sceneName': '調整中'}))
         requests.append(simpleobsws.Request('CreateScene', {'sceneName': '待機ループ'}))
+        requests.append(simpleobsws.Request('CreateScene', {'sceneName': 'Opening'}))
         for session in self.sessionsmodel.data:
-            name = f"{self.sessionsmodel.filename[-8:-4]}-{session['start_to_end']}-{session['title'][0:8]}"
+            # 直前幕間 (休憩)
+            name = f"{session['date'][8:10]}{session['track_id']}_〜{session['start_to_end'][0:5]}_休憩"
             requests.append(simpleobsws.Request('CreateScene', {'sceneName': f"{name}"}))
+            # 下に引く蓋絵 ソースを配置
+
+            # 登壇シーン
+            name = f"{session['date'][8:10]}{session['track_id']}_{session['start_to_end']}_{session['title'][0:16]}"
+            requests.append(simpleobsws.Request('CreateScene', {'sceneName': f"{name}"}))
+            # 下に引く蓋絵 ソースを配置
+
         requests.append(simpleobsws.Request('CreateScene', {'sceneName': 'closing 前待機ループ'}))
         requests.append(simpleobsws.Request('CreateScene', {'sceneName': 'closing'}))
 
         # ソース
+        # メディアソースのオプション `ソースがアクティブになったときに再生を再開する` をオフにする
 
         ret = await ws.call_batch(requests, halt_on_failure = False) # Perform the request batch
 
@@ -54,7 +64,7 @@ class TempSceneController:
 
         await ws.disconnect() # Disconnect from the websocket server cleanly
 
-controller = TempSceneController('cnsec2022_2022-07-12_A')
+controller = TempSceneController('cnsec2022_2022-08-05_A.csv')
 # controller = TempSceneController('cnsec2022_2022-07-12_B')
 
 loop = asyncio.get_event_loop()
