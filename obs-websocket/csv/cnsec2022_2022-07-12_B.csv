@@ -1,0 +1,7 @@
+id,title,abstract,speaker,session_time,difficulty,category,created_at,twitter_id,company,start_to_end,assumed_visitor,execution_phase,presentation_method,whether_it_can_be_published
+9999,(TrackA にてCo-ChairによるCNSec概要、見所紹介),,-,20,,,2022-01-25 22:58:05 +0900,,,19:00-19:20,,,事前収録,
+9999,(TrackA にて過去CNDでのSecurityセッション紹介),,-,20,,,2022-02-03 10:27:34 +0900,,,19:20-19:40,,,事前収録,
+9999,【CND Replay】How We Harden Platform Security at Mercari,,Taichi Nakashima,20,,,2022-01-13 10:13:36 +0900,,,19:40-20:00,,,事前収録,
+9999,休憩,,-,10,,,2022-02-04 10:13:45 +0900,,,20:00-20:10,,,事前収録,
+9999,脅威へ、しなやかかつ持続可能に対応するためのIaC環境 〜循環型IaC〜,,Hiroaki Hattori,30,,,2022-01-25 19:11:33 +0900,,,20:10-20:40,,,オンライン登壇,
+9999,Closing,,-,5,,,2022-02-08 02:27:21 +0900,,,20:50-20:55,,,オンライン登壇,
