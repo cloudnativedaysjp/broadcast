@@ -39,6 +39,9 @@ packages:
   - wget
   - dstat
   - iftop
+  - language-pack-ja-base
+  - language-pack-ja
+  - ibus-mozc
 runcmd:
   - sudo x11vnc -storepasswd ${vnc_password} /etc/.vncpasswd  
   - curl -sSL https://raw.githubusercontent.com/cloudnativedaysjp/broadcast/main/switcher/setup.sh | sh -
