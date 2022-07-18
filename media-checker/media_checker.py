@@ -2,11 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import boto3
+import csv
+from datetime import datetime
+import glob
 import json
 import subprocess
+import os
+import sys
+import urllib.request
+import urllib.error
 
-
+# 要求解像度定義
 require_resolutions = [
         {
             "ratio": 0,
@@ -40,87 +46,124 @@ require_resolutions = [
         }
     ]
 
-# Default criterion
-# Target ratio
+# デフォルトの解像度判定基準
 target_ratio = require_resolutions[2]["ratio"]
 horizontal_criteria_ratio = 16
 vertical_criteria_ratio = 9
 
-# Target duration(min)
-duration_upper_limit = 45
-duration_lower_limit = 35
-duration_flag = True
-
-# Target file size(MiB)
-size_upper_limit = 1000
-size_flag = False
+# デフォルトのファイルサイズ(MB)判定基準
+size_upper_limit = 2000
+size_flag = True
 
 
 def main():
     args = get_args()
 
-    if args.input is not None:
-        input = args.input[0]
-        get_files = subprocess.Popen(
-                ["ls", str(input)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
+    args.handler(args)
 
+
+def command_put(args):
+    # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
+    input_dir = args.input[0]
+    # 末尾に / が存在する場合に削除
+    input_dir = input_dir.rstrip('/')
+
+    # CSVファイルを読み込んで、セッション単位で最新のファイルを特定する
+    # CSVファイルの中身をlist形式で取得
+    csv_file = open("".join(args.csv),
+                    "r",
+                    encoding="utf_8",
+                    errors="",
+                    newline="")
+
+    list_csv_file = csv.reader(csv_file,
+                               delimiter=",",
+                               doublequote=True,
+                               lineterminator="\r\n",
+                               quotechar='"',
+                               skipinitialspace=True)
+
+    # CSVを一行ずつ判定し、セッション番号からはじまるフォルダがあれば後続処理、なければcontinue
+    header = next(list_csv_file)
+
+    duration_upper_limit = int("".join(args.upper_limit))
+    duration_lower_limit = int("".join(args.lower_limit))
+
+    list_of_dirs = glob.glob("".join(args.input) + '/*')
+    for row in list_csv_file:
         media_status = []
+        for dirs in list_of_dirs:
+            dirs = dirs.split('/')[-1]
+            if dirs.split('_')[0] == row[0]:
+                list_of_files = glob.glob("".join(args.input) + '/' + row[0] + '*' + '/*')
+                # フォルダ内の最新のファイルをフルパスで取得する
+                try:
+                    latest_file = max(list_of_files, key=os.path.getctime)
+                except ValueError:
+                    continue
 
-        for filename in str(get_files.stdout.read().decode()).split("\n"):
-            if len(filename) != 0:
-                filename = filename.split('/')[-1]
-                filename = filename.split('.')[0]
-                media_width, media_height, media_duration, media_size = _get_media_info(input, filename)
-                media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, filename)
+                # [TODO] MP4形式ではないときのBODYを作成してDkに返却する
+                if latest_file.split('.')[1] != "mp4":
+                    continue
+
+                # 最新ファイルの動画情報を生成する
+                media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
+                filename = latest_file.split('/')[-1]
+                media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename)
 
                 media_status.append(media_status_dict)
 
-        if args.s3 is not None:
-            s3 = boto3.resource('s3')
-            bucket_name = args.s3[0]
+                # print(json.dumps(media_status, ensure_ascii=False))
 
-            # specify backet name
-            bucket = s3.Bucket(bucket_name)
+                # DkにAPI経由で動画情報を送る
+                # [TODO] 環境変数($TOKEN)の確認
+                # [TODO] 環境変数($DREAMKAST_DOMAIN)
+                # [TODO] TOKENの存在が確認できない場合、その旨をSlack通知する
 
-            if args.eachfile:
-                for each_media_status in media_status:
-                    object_key_name = "{}.json".format(each_media_status["file_name"])
+                # [TODO] Dk連携
 
-                    # Create object
-                    obj = bucket.Object(object_key_name)
+                # [TODO] Dk連携が失敗した場合にSlack通知
 
-                    # Put each media file to specified s3 bucket
-                    obj.put(Body=json.dumps(each_media_status))
+                # [TODO] Dk連携が完了後、動画をRename
 
             else:
-                object_key_name = "merge.json"
-                obj = bucket.Object(object_key_name)
-
-                # Put a file containing all media information to specified s3 bucket
-                obj.put(Body=json.dumps(media_status))
-
-        else:
-            print(json.dumps(media_status))
+                continue
 
 
-def _get_media_info(input, filename):
+def command_stdout(args):
+    # 対象フォルダ配下の動画の情報をすべて標準出力する
+    media_status = []
+
+    duration_upper_limit = int("".join(args.upper_limit))
+    duration_lower_limit = int("".join(args.lower_limit))
+
+    list_of_dirs = glob.glob("".join(args.input) + '/*')
+    for list_of_each_dirs in list_of_dirs:
+        list_of_files = glob.glob(list_of_each_dirs + '/*')
+        for filename in list_of_files:
+            media_width, media_height, media_duration, media_size = _get_media_info(filename)
+            filename = filename.split('/')[-1]
+            media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename)
+
+            media_status.append(media_status_dict)
+
+    print(json.dumps(media_status, ensure_ascii=False))
+
+
+def _get_media_info(filename):
     """
-    Get Input media Information
+    対象の動画ファイルの情報を取得する
 
     Args:
-        input(str): filename including directory
-        filename(str): filename
+        filename(str): 情報取得対象のファイル名
     Returns:
-        media_width(int): media width(px)
-        media_height(int): media height(px)
-        media_duration(int): media duration(sec)
-        media_size(int): media size(byte)
+        media_width(int): 動画の横幅(px)
+        media_height(int): 動画の縦幅(px)
+        media_duration(int): 動画の長さ(sec)
+        media_size(int): 動画のサイズ(byte)
     """
 
-    # Get information on videos under the specified folder
+    # 指定したフォルダ配下の動画の情報を取得する
     get_proc_cmd = [
             'ffprobe',
             '-hide_banner',
@@ -128,8 +171,9 @@ def _get_media_info(input, filename):
             '-show_format',
             '-of',
             'json',
-            str(input)+"/" + str(filename)
+            str(filename)
         ]
+
     proc_mediainfo = subprocess.run(
             get_proc_cmd,
             stdout=subprocess.PIPE,
@@ -137,25 +181,6 @@ def _get_media_info(input, filename):
             text=True
         )
     media_data = json.loads(proc_mediainfo.stdout)
-
-    # Get information on video about the specified file
-    if len(media_data) == 0:
-        get_proc_cmd = [
-                'ffprobe',
-                '-hide_banner',
-                '-show_streams',
-                '-show_format',
-                '-of',
-                'json',
-                str(input)
-            ]
-        proc_mediainfo = subprocess.run(
-                get_proc_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-        media_data = json.loads(proc_mediainfo.stdout)
 
     media_width = media_data['streams'][0]['width']
     media_height = media_data['streams'][0]['height']
@@ -165,20 +190,25 @@ def _get_media_info(input, filename):
     return media_width, media_height, media_duration, media_size
 
 
-def _create_media_status(media_width, media_height, media_duration, media_size, filename):
+def _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename):
     """
-    Create information for each video
+    ファイルごとに動画情報を生成する
 
     Args:
-        media_width(int): media width(px)
-        media_height(int): media height(px)
-        media_duration(int): media duration(sec)
-        media_size(int): media size(byte)
-        filename(str): filename
+        media_width(int): 動画の横幅(px)
+        media_height(int): 動画の縦幅(px)
+        media_duration(int): 動画の長さ(sec)
+        media_size(int): 動画のサイズ(byte)
+        duration_upper_limit(int): 動画の長さの上限
+        duration_lower_limit(int): 動画の長さの下限
+        filename(str): 動画ファイル名
     Returns:
-        media_status_dict(dict): media information
+        media_status_dict(dict): Dk上にAPI経由で送る動画情報
     """
-    # Check resolution
+    # 現在時刻の取得
+    check_datetime = str(datetime.today().isoformat(timespec='seconds'))
+
+    # 解像度チェック
     if media_width < require_resolutions[target_ratio]["width"] or \
             media_height < require_resolutions[target_ratio]["height"]:
         resolution_status = "NG"
@@ -186,7 +216,7 @@ def _create_media_status(media_width, media_height, media_duration, media_size, 
         resolution_status = "OK"
     resolution_type = "NON STANDARD"
 
-    # Check aspect ratio
+    # アスペクト比チェック
     if media_width % horizontal_criteria_ratio == 0 and \
             media_height % vertical_criteria_ratio == 0 and \
             media_width // horizontal_criteria_ratio == media_height // vertical_criteria_ratio:
@@ -196,7 +226,7 @@ def _create_media_status(media_width, media_height, media_duration, media_size, 
         aspect_status = "NG"
         aspect_ratio = "{} x {}".format(media_width, media_height)
 
-    # Check if the resolution is standard
+    # 解像度が標準規格に沿っているかをチェックする
     for resolution_definition in require_resolutions:
         # check if standard
         if media_width == resolution_definition["width"] and\
@@ -213,76 +243,133 @@ def _create_media_status(media_width, media_height, media_duration, media_size, 
                 aspect_ratio = "16:9"
             else:
                 aspect_status = "NG"
-                aspect_ratio = "{} x {}".format(media_width, media_height)
+                aspect_ratio = "16:9ではありません: {} x {}".format(media_width, media_height)
 
-    # Check duration(if True)
-    if duration_flag:
-        media_duration_min = media_duration // 60
-        if media_duration_min < duration_lower_limit:
-            duration_status = "NG"
-            duration_description = "The media duration is shorter than {} minutes.".format(duration_lower_limit)
-        elif duration_lower_limit <= media_duration_min <= duration_upper_limit:
-            duration_status = "OK"
-            duration_description = "Appropriate media duration."
-        else:
-            duration_status = "NG"
-            duration_description = "The media duration is longer than {} minutes.".format(duration_upper_limit)
+    # 動画の長さのチェック
+    media_duration_min = media_duration // 60
+    if media_duration_min < duration_lower_limit:
+        duration_status = "NG"
+        duration_description = "基準値（{}分）を下回っています".format(duration_lower_limit)
+    elif duration_lower_limit <= media_duration_min <= duration_upper_limit:
+        duration_status = "OK"
+        duration_description = "適切な動画の長さです"
     else:
-        duration_status = False
+        duration_status = "NG"
+        duration_description = "基準値（{}分）を超えています".format(duration_upper_limit)
 
-    # Check media size(if True)
+    # 動画のサイズチェック(if True)
     if size_flag:
         media_size_mib = media_size // (1024*1024)
         if media_size_mib >= size_upper_limit:
             size_status = "NG"
-            size_description = "The media size exceeds {} MiB.".format(size_upper_limit)
+            size_description = "基準値（{}GB）を超えています".format(size_upper_limit)
         else:
             size_status = "OK"
-            size_description = "Appropriate media size."
+            size_description = "基準値内の動画サイズです"
     else:
         size_status = False
 
+    # BODY作成
     media_status_dict = {
-        "file_name": filename,
-        "resolution_status": resolution_status,
-        "resolution_type": resolution_type,
-        "aspect_status": aspect_status,
-        "aspect_ratio": aspect_ratio
+        "status": "confirmed",
+        "statistics": {
+            "ファイル名": filename,
+            "チェック日時": check_datetime,
+            "解像度チェック": resolution_status,
+            "解像度タイプ": resolution_type,
+            "アスペクト比チェック": aspect_status,
+            "アスペクト比": aspect_ratio,
+            "動画の長さチェック": duration_status,
+            "動画の長さコメント": duration_description
+            }
         }
 
-    if duration_status:
-        media_status_dict["duration_status"] = duration_status
-        media_status_dict["duration_description"] = duration_description
+    if resolution_status != "OK" or \
+            aspect_status != "OK" or \
+            duration_status != "OK":
+        media_status_dict["status"] = "invalid_format"
+
     if size_status:
-        media_status_dict["size_status"] = size_status
-        media_status_dict["size_description"] = size_description
+        media_status_dict["statistics"]["ファイルサイズチェック"] = size_status
+        media_status_dict["statistics"]["ファイルサイズコメント"] = size_description
+        if size_status != "OK":
+            media_status_dict["status"] = "invalid_format"
 
     return media_status_dict
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="""
-    Get media information and determine if the criteria are met.
+    動画の情報を取得し、判定条件を満たしているか否かを判定する
     """)
 
-    parser.add_argument('--input',
-                        nargs=1,
-                        type=str,
-                        required=True,
-                        metavar='INPUT',
-                        help='File or folder name to be analyzed.')
+    subparsers = parser.add_subparsers()
 
-    parser.add_argument('--s3',
-                        nargs=1,
-                        type=str,
-                        metavar='S3_BUCKET_NAME',
-                        help='S3 bucket name to store result json data.')
+    parser_put = subparsers.add_parser('put',
+                                       help='セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する')
 
-    parser.add_argument('--eachfile',
-                        action='store_true',
-                        help='Determine if the results should be combined into one file.')
+    parser_put.add_argument('--input',
+                            nargs=1,
+                            type=str,
+                            required=True,
+                            metavar='INPUT',
+                            help='セッション動画格納先ディレクトリ')
 
-    return parser.parse_args()
+    parser_put.add_argument('--csv',
+                            nargs=1,
+                            type=str,
+                            required=True,
+                            metavar='CSV_FILE',
+                            help='セッションのCSVリスト')
+
+    parser_put.add_argument('--upper_limit',
+                            nargs=1,
+                            type=str,
+                            required=True,
+                            metavar='DURATION_UPPER_LIMIT',
+                            help='動画の長さの上限の指定(分)')
+
+    parser_put.add_argument('--lower_limit',
+                            nargs=1,
+                            type=str,
+                            required=True,
+                            metavar='DURATION_LOWER_LIMIT',
+                            help='動画の長さの下限の指定(分)')
+
+    parser_put.set_defaults(handler=command_put)
+
+    parser_stdout = subparsers.add_parser('stdout',
+                                          help='指定のディレクトリは以下の動画情報を全て標準出力する')
+
+    parser_stdout.add_argument('--input',
+                               nargs=1,
+                               type=str,
+                               required=True,
+                               metavar='INPUT',
+                               help='セッション動画格納先ディレクトリ')
+
+    parser_stdout.add_argument('--upper_limit',
+                               nargs=1,
+                               type=str,
+                               required=True,
+                               metavar='DURATION_UPPER_LIMIT',
+                               help='動画の長さの上限の指定(分)')
+
+    parser_stdout.add_argument('--lower_limit',
+                               nargs=1,
+                               type=str,
+                               required=True,
+                               metavar='DURATION_LOWER_LIMIT',
+                               help='動画の長さの下限の指定(分)')
+
+    parser_stdout.set_defaults(handler=command_stdout)
+
+    args = parser.parse_args()
+
+    if hasattr(args, 'handler'):
+        return args
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
