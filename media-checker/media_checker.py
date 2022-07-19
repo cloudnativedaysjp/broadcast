@@ -67,8 +67,10 @@ def command_put(args):
     # 環境変数($TOKEN/$DREAMKAST_DOMAIN)の確認
     if os.getenv('TOKEN') is None or \
             os.getenv('DREAMKAST_DOMAIN') is None:
-        print("Necessary enc is not set")
-        # [TODO] TOKENの存在が確認できない場合、その旨をSlack通知し処理を終了する
+        # 環境変数の存在が確認できない場合、その旨をSlack通知し処理を終了する
+        message = "subject: $TOKEN" + '\r\n' +\
+                  "環境変数の読み込みに失敗しました"
+        _send_errlog_to_slack(message)
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
@@ -118,7 +120,7 @@ def command_put(args):
                             "statistics": {
                                 "ファイル名": filename,
                                 "チェック日時": check_datetime,
-                                "ファイルフォーマット": "ファイルがMP4ではありません"
+                                "ファイルフォーマット": "ファイルの読み込みに失敗しました"
                                 }
                             }
                     # Return to Dk
@@ -133,9 +135,14 @@ def command_put(args):
                                                            method='PUT')
                     try:
                         urllib.request.urlopen(dk_nonmp4_req)
-                    except Exception as e:
-                        # [TODO] Dk連携が失敗した場合にSlack通知
-                        sys.stderr.write('{}\n'.format(e))
+                    except:
+                        # Dk連携が失敗した場合にSlack通知
+                        import traceback
+                        message = "subject: " + filename + '\r\n' +\
+                                  "reason: Dk連携に失敗しました" + '\r\n' +\
+                                  "error detail: " + '\r\n' +\
+                                  traceback.format_exc()
+                        _send_errlog_to_slack(message)
                         sys.exit(1)
 
                     continue
@@ -144,8 +151,13 @@ def command_put(args):
                 try:
                     media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
                 except KeyError:
-                    # [TODO] 動画情報の取得に失敗した場合にSlack通知
-                    print("動画情報の取得に失敗しました")
+                    # 動画情報の取得に失敗した場合にSlack通知
+                    import traceback
+                    message = "subject: " + latest_file + '\r\n' +\
+                              "reason: 動画情報の取得に失敗しました" + '\r\n' +\
+                              "error detail: " + '\r\n' +\
+                              traceback.format_exc()
+                    _send_errlog_to_slack(message)
                     continue
 
                 filename = row[1] + ".mp4"
@@ -170,9 +182,14 @@ def command_put(args):
 
                 try:
                     urllib.request.urlopen(dk_req)
-                except Exception as e:
-                    # [TODO] Dk連携が失敗した場合にSlack通知
-                    sys.stderr.write('{}\n'.format(e))
+                except:
+                    # Dk連携が失敗した場合にSlack通知
+                    import traceback
+                    message = "subject: " + filename + '\r\n' +\
+                              "reason: Dk連携に失敗しました" + '\r\n' +\
+                              "error detail: " + '\r\n' +\
+                              traceback.format_exc()
+                    _send_errlog_to_slack(message)
                     sys.exit(1)
 
                 # Dk連携が完了後、動画をRename
@@ -195,7 +212,18 @@ def command_stdout(args):
     for list_of_each_dirs in list_of_dirs:
         list_of_files = glob.glob(list_of_each_dirs + '/*')
         for filename in list_of_files:
-            media_width, media_height, media_duration, media_size = _get_media_info(filename)
+            try:
+                media_width, media_height, media_duration, media_size = _get_media_info(filename)
+            except KeyError:
+                err_body = {
+                        "status": "invalid_format",
+                        "statistics": {
+                            "ファイル名": filename,
+                            "ファイルフォーマット": "ファイルの読み込みに失敗しました"
+                            }
+                        }
+                media_status.append(err_body)
+                continue
             filename = filename.split('/')[-1]
             media_status_dict = _create_media_status(media_width,
                                                      media_height,
@@ -363,6 +391,29 @@ def _create_media_status(
             media_status_dict["status"] = "invalid_format"
 
     return media_status_dict
+
+
+def _send_errlog_to_slack(message):
+    """
+    動画チェックの処理に失敗した際にSlack通知する
+
+    Args:
+        message(str): 発生したエラー詳細
+    Returns:
+    """
+    slack_url = os.getenv('SLACKURL')
+    header = {'content-type': 'application/json'}
+    base_data = {
+            "text": message
+            }
+    post_data = json.dumps(base_data, ensure_ascii=False).encode()
+
+    slack_req = urllib.request.Request(slack_url,
+                                       headers=header,
+                                       data=post_data,
+                                       method='POST')
+
+    urllib.request.urlopen(slack_req)
 
 
 def get_args():
