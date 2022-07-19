@@ -63,6 +63,14 @@ def main():
 
 
 def command_put(args):
+    # Dk連携用の環境変数がセットされているかを確認する
+    # 環境変数($TOKEN/$DREAMKAST_DOMAIN)の確認
+    if os.getenv('TOKEN') is None or \
+            os.getenv('DREAMKAST_DOMAIN') is None:
+        print("Necessary enc is not set")
+        # [TODO] TOKENの存在が確認できない場合、その旨をSlack通知し処理を終了する
+        sys.exit(1)
+
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
     input_dir = args.input[0]
     # 末尾に / が存在する場合に削除
@@ -91,7 +99,6 @@ def command_put(args):
 
     list_of_dirs = glob.glob("".join(args.input) + '/*')
     for row in list_csv_file:
-        media_status = []
         for dirs in list_of_dirs:
             dirs = dirs.split('/')[-1]
             if dirs.split('_')[0] == row[0]:
@@ -102,29 +109,76 @@ def command_put(args):
                 except ValueError:
                     continue
 
-                # [TODO] MP4形式ではないときのBODYを作成してDkに返却する
+                # 最新のファイルがMP4形式ではない場合
                 if latest_file.split('.')[1] != "mp4":
+                    filename = latest_file.split('/')[-1]
+                    check_datetime = str(datetime.today().isoformat(timespec='seconds'))
+                    non_mp4 = {
+                            "status": "invalid_format",
+                            "statistics": {
+                                "ファイル名": filename,
+                                "チェック日時": check_datetime,
+                                "ファイルフォーマット": "ファイルがMP4ではありません"
+                                }
+                            }
+                    # Return to Dk
+                    talkid = row[0]
+                    url = 'https://' + os.getenv('DREAMKAST_DOMAIN') + '/api/v1/talks/' + talkid + '/video_registration'
+                    header = {'Authorization': 'Bearer ' + os.getenv('TOKEN')}
+                    put_data = json.dumps(non_mp4, ensure_ascii=False)
+
+                    dk_nonmp4_req = urllib.request.Request(url,
+                                                           headers=header,
+                                                           data=put_data.encode(),
+                                                           method='PUT')
+                    try:
+                        urllib.request.urlopen(dk_nonmp4_req)
+                    except Exception as e:
+                        # [TODO] Dk連携が失敗した場合にSlack通知
+                        sys.stderr.write('{}\n'.format(e))
+                        sys.exit(1)
+
                     continue
 
                 # 最新ファイルの動画情報を生成する
-                media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
-                filename = latest_file.split('/')[-1]
-                media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename)
+                try:
+                    media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
+                except KeyError:
+                    # [TODO] 動画情報の取得に失敗した場合にSlack通知
+                    print("動画情報の取得に失敗しました")
+                    continue
 
-                media_status.append(media_status_dict)
-
-                # print(json.dumps(media_status, ensure_ascii=False))
+                filename = row[1] + ".mp4"
+                media_status_dict = _create_media_status(media_width,
+                                                         media_height,
+                                                         media_duration,
+                                                         media_size,
+                                                         duration_upper_limit,
+                                                         duration_lower_limit,
+                                                         filename)
 
                 # DkにAPI経由で動画情報を送る
-                # [TODO] 環境変数($TOKEN)の確認
-                # [TODO] 環境変数($DREAMKAST_DOMAIN)
-                # [TODO] TOKENの存在が確認できない場合、その旨をSlack通知する
+                talkid = row[0]
+                url = 'https://' + os.getenv('DREAMKAST_DOMAIN') + '/api/v1/talks/' + talkid + '/video_registration'
+                header = {'Authorization': 'Bearer ' + os.getenv('TOKEN')}
+                put_data = json.dumps(media_status_dict, ensure_ascii=False)
 
-                # [TODO] Dk連携
+                dk_req = urllib.request.Request(url,
+                                                headers=header,
+                                                data=put_data.encode(),
+                                                method='PUT')
 
-                # [TODO] Dk連携が失敗した場合にSlack通知
+                try:
+                    urllib.request.urlopen(dk_req)
+                except Exception as e:
+                    # [TODO] Dk連携が失敗した場合にSlack通知
+                    sys.stderr.write('{}\n'.format(e))
+                    sys.exit(1)
 
-                # [TODO] Dk連携が完了後、動画をRename
+                # Dk連携が完了後、動画をRename
+                oldpath = latest_file
+                newpath = input_dir + "/" + dirs + "/" + row[1] + ".mp4"
+                os.rename(oldpath, newpath)
 
             else:
                 continue
@@ -143,7 +197,13 @@ def command_stdout(args):
         for filename in list_of_files:
             media_width, media_height, media_duration, media_size = _get_media_info(filename)
             filename = filename.split('/')[-1]
-            media_status_dict = _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename)
+            media_status_dict = _create_media_status(media_width,
+                                                     media_height,
+                                                     media_duration,
+                                                     media_size,
+                                                     duration_upper_limit,
+                                                     duration_lower_limit,
+                                                     filename)
 
             media_status.append(media_status_dict)
 
@@ -190,7 +250,14 @@ def _get_media_info(filename):
     return media_width, media_height, media_duration, media_size
 
 
-def _create_media_status(media_width, media_height, media_duration, media_size, duration_upper_limit, duration_lower_limit, filename):
+def _create_media_status(
+        media_width,
+        media_height,
+        media_duration,
+        media_size,
+        duration_upper_limit,
+        duration_lower_limit,
+        filename):
     """
     ファイルごとに動画情報を生成する
 
