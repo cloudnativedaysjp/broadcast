@@ -11,6 +11,7 @@ import os
 import sys
 import urllib.request
 import urllib.error
+import pytz
 
 # 要求解像度定義
 require_resolutions = [
@@ -114,7 +115,7 @@ def command_put(args):
                 # 最新のファイルがMP4形式ではない場合
                 if latest_file.split('.')[1] != "mp4":
                     filename = latest_file.split('/')[-1]
-                    check_datetime = str(datetime.today().isoformat(timespec='seconds'))
+                    check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
                     non_mp4 = {
                             "status": "invalid_format",
                             "statistics": {
@@ -301,7 +302,7 @@ def _create_media_status(
         media_status_dict(dict): Dk上にAPI経由で送る動画情報
     """
     # 現在時刻の取得
-    check_datetime = str(datetime.today().isoformat(timespec='seconds'))
+    check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
 
     # 解像度チェック
     if media_width < require_resolutions[target_ratio]["width"] or \
