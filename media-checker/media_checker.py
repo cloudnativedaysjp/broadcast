@@ -364,7 +364,7 @@ def _create_media_status(
         media_size_mib = media_size // (1024*1024)
         if media_size_mib >= size_upper_limit:
             size_status = "NG"
-            size_description = "基準値（{}GB）を超えています".format(size_upper_limit)
+            size_description = "基準値（{}MB）を超えています".format(size_upper_limit)
         else:
             size_status = "OK"
             size_description = "基準値内の動画サイズです"
@@ -464,7 +464,7 @@ def get_args():
     parser_put.set_defaults(handler=command_put)
 
     parser_stdout = subparsers.add_parser('stdout',
-                                          help='指定のディレクトリは以下の動画情報を全て標準出力する')
+                                          help='指定のディレクトリ配下の全ての動画の情報を標準出力する')
 
     parser_stdout.add_argument('--input',
                                nargs=1,
