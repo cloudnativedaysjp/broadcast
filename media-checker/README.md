@@ -1,57 +1,177 @@
-media checker <WIP>
+media checker
 =============
 
-解析対象の解像度とアスペクト比を判定し、標準出力で結果を返却します。  
-また、Flagが設定されている場合は動画長と動画容量も判定します。  
-解析対象としては、動画ファイル単体 または 動画ファイルが配置されたディレクトリを指定可能です。
-
-デフォルトの判定基準は、解像度: `FullHD`、アスペクト比: `16:9`、動画長: `35min - 45min`、動画容量: `< 1000MiB`。  
-判定基準と違う場合に `NG` と判定されます。
-
-`--s3 <bucket name>` を指定した場合は、標準出力ではなく指定した S3 Bucket に結果をJson形式で保存します。  
-合わせて `--eachfile` が指定されている場合には、解析対象のファイルごとに結果を指定の S3 Bucket に保存します。(Object名：`{filename}.json`)  
-`--eachfile` の指定がない場合には、解析対象結果全てをまとめて Object名: `merge.json` で指定の S3 Bucket に保存します。
+指定のフォルダにアップロードされた事前収録動画の自動チェックを行います。
 
 ## Prerequisites
-- ffmpeg
 - Python3
-- boto3
-- (S3 Bucketに結果を格納する場合)AWS CLI v2
+  - pytz
+- ffmpeg
+- jq
 
-S3 Bucketへの結果格納を行う場合は、事前に AWS CLI でログインを済ませておく。
-```
-$ aws configure
-```
-
-検証時は
+以下のバージョンで動作検証済み。
 ```bash
 $ python3 --version
 Python 3.8.10
 
-$ pip3 list | grep boto3
-boto3 1.24.17
+$ pip3 list | grep pytz
+pytz 2022.1
 
 $ ffmpeg -version
-ffmpeg version 4.2.4-1ubuntu0.1 Copyright (c) 2000-2020 the FFmpeg developers
-built with gcc 9 (Ubuntu 9.3.0-10ubuntu2)
+ffmpeg version 4.2.7-0ubuntu0.1 Copyright (c) 2000-2022 the FFmpeg developers
+built with gcc 9 (Ubuntu 9.4.0-1ubuntu1~20.04.1)
+
+$ jq --version
+jq-1.6
 ```
 
 ## Usage
-```
+```bash
 $ python3 media_checker.py --help
 
-usage: media_checker.py [-h] --input INPUT [--s3 S3_BUCKET_NAME] [--eachfile]
+usage: media_checker.py [-h] {put,stdout} ...
 
-Get media information and determine if the criteria are met.
+動画の情報を取得し、判定条件を満たしているか否かを判定する
+
+positional arguments:
+  {put,stdout}
+    put         セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する
+    stdout      指定のディレクトリ配下の全ての動画の情報を標準出力する
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --input INPUT        File or folder name to be analyzed.
-  --s3 S3_BUCKET_NAME  S3 bucket name to store result json data.
-  --eachfile           Determine if the results should be combined into one file.
+  -h, --help    show this help message and exit
 ```
 
-判定基準を変える場合は、以下の設定を変更します。
+### media_checker.py put
+セッションの最新ファイルごとに動画のチェックを行いその結果をDkにAPI経由で連携します。
+
+セッション動画格納先のROOTディレクトリとセッションリストのCSVを指定し、CSVに記載のあるセッション毎に動画が格納されている場合にチェックを行います。
+セッションフォルダに複数の動画が存在する場合には、タイムスタンプが最新の動画のみをチェックし、その後csvファイルに記載のセッション名にrenameします。
+
+```bash
+$ python3 media_checker.py put --help
+
+usage: media_checker.py put [-h] --input INPUT --csv CSV_FILE --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         セッション動画格納先ディレクトリ
+  --csv CSV_FILE        セッションのCSVリスト
+  --upper_limit DURATION_UPPER_LIMIT
+                        動画の長さの上限の指定(分)
+  --lower_limit DURATION_LOWER_LIMIT
+                        動画の長さの下限の指定(分)
+```
+
+また `put method` は以下3つの環境変数が設定されていることを前提とします。
+| 環境変数名        | Description                  |
+| :--              | :--                          |
+| TOKEN            | Dk API 利用のための JWT Token |
+| DREAMKAST_DOMAIN | 情報連携先Dk環境              |
+| SLACKURL         | エラー発生時の通知先Slack URL  |
+
+Slack通知は、以下のタイミングで行われます。
+| 契機 | 挙動 |
+| :-- | :-- |
+| 環境変数(TOKEN/DREAMKAST_DOMAIN)が確認できない場合 | Dk連携に必要な環境変数が確認できない場合に通知し、処理を終了する |
+| Dk連携できない場合 | DkへのPUTが失敗した場合に通知し、処理を終了する |
+| 動画情報の取得に失敗した場合 | Dk通知用の動画情報の取得に失敗した場合に通知し、次の動画ファイルの処理に移る |
+
+### media_checker.py stdout
+指定したセッション動画格納先のROOTディレクトリ配下に格納されている全ての動画情報を標準出力します。
+
+```bash
+$ python3 media_checker.py stdout --help
+
+usage: media_checker.py stdout [-h] --input INPUT --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         セッション動画格納先ディレクトリ
+  --upper_limit DURATION_UPPER_LIMIT
+                        動画の長さの上限の指定(分)
+  --lower_limit DURATION_LOWER_LIMIT
+                        動画の長さの下限の指定(分)
+```
+
+## How to Setup to put method
+`put method` は、`cron`にてX分おきに実行することを想定しています。  
+`cron`でTOKENなどの環境変数を読み込むため、以下2つのcronをセットすることとします。
+
+1. `env_set.sh` を一日一回cronにて実行し、環境変数情報が記載されたファイルを作成する
+2. 1 で作成したファイルをPythonスクリプトが読み込んで実行するように記載する
+
+1. env_set.sh
+スクリプト内の`<CLIENT ID>`, `<CLIENT_SECRET>`, `<SLACK WEBHOOK URL>`, `<PATH TO ENV FILE>`を書き換えたうえで cronで一日一回実行するよう設定する。  
+`<CLIENT ID>`, `<CLIENT_SECRET>`に関しては、[DreamkastのREADME](https://github.com/cloudnativedaysjp/dreamkast#how-to-use-rest-api-for-videoregistration)を参照のこと。
+
+また、**JWT Token発行数には月上限が存在するため、必要以上の実行をしないよう留意する。**
+
+2. media_checker.py put
+下記形式でcronをセットする。
+```
+export $(cat <PATH TO ENV FILE> | xargs); python3 <SCRIPT DIR>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
+```
+
+例えば、下記のようなディレクトリ構造の場合 かつ 動画の長さの判定基準が 20 ~ 45分の場合
+```
+<ROOT FOLDER OF MEDIAS>
+  ﹂ /uploads/
+      ﹂ 0000_session01/
+          ﹂ session01.mp4
+      ﹂ 1111_session02
+          ﹂ session02.mp4
+  ﹂ media_checker.py
+  ﹂ env_set.sh
+  ﹂ <CSV FILE>
+  ﹂ <ENV FILE>
+```
+
+cronの設定は以下のようになる
+```bash
+# cronjob for create environmental file
+0 0 * * * <ROOT FOLDER OF MEDIAS>/env_set.sh
+
+# cronjob for media_checker.py
+*/5 * * * * export $(cat <ROOT FOLDER OF MEDIAS>/<ENV FILE> | xargs); python3 <ROOT FOLDER OF MEDIAS>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "45" --lower_limit "20" --csv "<CSV FILE>"
+```
+
+
+## 取得される動画情報
+動画情報は下記のフォーマットで取得されます。
+```
+{
+  "status": "confirmed",
+  "statistics": {
+            "ファイル名": "XX.mp4",
+            "チェック日時": "YYYY/MM/DD hh:mm:ss",
+            "解像度チェック": "OK",
+            "解像度タイプ": "FHD",
+            "アスペクト比チェック": "OK",
+            "アスペクト比": "16:9",
+            "動画の長さチェック": "OK",
+            "動画の長さコメント": "OK",
+            "ファイルサイズチェック": "OK",
+            "ファイルサイズコメント": "OK"
+          }
+}
+```
+
+| Item | Description |
+| :--  | :--  |
+| status | `confirmed` or `invalid_format`、<br/>全てのチェックがOKの場合に`confirmed`、それ以外の場合に`invalid_format`を返却 |
+| ファイル名 | CSVに記載のセッション名.mp4 |
+| チェック日時 | 動画のチェックを行った時間(JST) |
+| 解像度チェック | 指定した解像度タイプに合致する場合 `OK`、それ以外の場合に`NG` |
+| 解像度タイプ | `target_ratio`で指定する。<br/>`target_ratio`自体は`require_resolutions[X]["ratio"]` の `X`で判定する解像度を指定<br/> 0: SD, 1: HD, 2: FullHD, 3:  WQHD, 4: 4K|
+| アスペクト比チェック | 指定したアスペクト比に合致する場合 `OK`、それ以外の場合に`NG` |
+| アスペクト比 | `vertical_criteria_ratio`(横)と `horizontal_criteria_ratio`(縦)で指定した比率であれば、指定したアスペクト比を返却<br/>合致しない場合は動画の`横幅×縦幅`の数値を返却 |
+| 動画の長さのチェック | 動画の長さが指定した範囲内であれば`OK`、逸脱している場合に`NG` |
+| 動画の長さコメント | 動画の長さの上限下限は、スクリプトの引数で指定する<br/>- 下限を下回る場合: 基準値（XX分）を下回っています <br>- 上限下限に収まっている場合: 適切な動画の長さです <br>- 上限を超えている場合: 基準値（XX分）を超えています |
+| ファイルサイズチェック | `size_flag` = `True`の場合に出力される<br/>動画の容量上限を超えていなければ`OK`、超えている場合は`NG` |
+| ファイルサイズコメント | 動画の容量上限(MB)は`size_upper_limit`で指定する(デフォルト2000MB)<br>- 上限内の場合: 基準値内の動画サイズです<br/>- 上限を超過している場合: 基準値（YY MB）を超えています |
+
+スクリプト内で編集可能なオプションは以下
 ```bash
 # Default criterion
 # Target ratio
@@ -59,103 +179,58 @@ target_ratio = require_resolutions[2]["ratio"]
 horizontal_criteria_ratio = 16
 vertical_criteria_ratio = 9
 
-# Target duration(min)
-duration_upper_limit = 45
-duration_lower_limit = 35
-duration_flag = True
-
 # Target file size(MiB)
-size_upper_limit = 1000
-size_flag = False
+size_upper_limit = 2000
+size_flag = True
 ```
 
-| Item | Description |
-| :--  | :--  |
-| target_ratio | `require_resolutions[X]["ratio"]` の `X`で判定する解像度を指定<br/> 0: SD, 1: HD, 2: FullHD, 3:  WQHD, 4: 4K|
-| vertical_criteria_ratio | アスペクト比(横) |
-| horizontal_criteria_ratio | アスペクト比(縦) |
-| duration_upper_limit | 動画長の上限値(分) ※デフォルト45分 |
-| duration_lower_limit | 動画長の下限値(分) ※デフォルト35分 |
-| duration_flag | True(デフォルト)/False (Trueの場合に出力結果に動画長の判定結果を含める) |
-| size_upper_limit | 動画の容量上限値 ※デフォルト1000MiB |
-| size_flag | True/False(デフォルト) (Trueの場合に出力結果に動画容量の判定結果を含める) |
-
-## 出力例
-```bash
-# duration_flag: False, size_flag: False
-$ python3 media_checker.py --input media | jq
-[
-  {
-    "file_name": "XX",
-    "resolution_status": "NG",
-    "resolution_type": "WQHD",
-    "aspect_status": "OK",
-    "aspect_ratio": "16:9"
-  },
-  {
-    "file_name": "YY",
-    "resolution_status": "OK",
-    "resolution_type": "FullHD",
-    "aspect_status": "OK",
-    "aspect_ratio": "16:9"
-  },
-  {
-    "file_name": "ZZ",
-    "resolution_status": "NG",
-    "resolution_type": "NON STANDARD",
-    "aspect_status": "NG",
-    "aspect_ratio": "1728 x 1080"
-  }
-]
-
-# duration_flag: True, size_flag: True
-$ python3 media_checker.py --input XX | jq
-[
-  {
-    "file_name": "XX",
-    "resolution_status": "NG",
-    "resolution_type": "WQHD",
-    "aspect_status": "OK",
-    "aspect_ratio": "16:9",
-    "duration_status": "OK",
-    "duration_description": "Appropriate media duration.",
-    "size_status": "OK",
-    "size_description": "Appropriate media size."
-  }
-]
+## Example
+- FullHD、問題なし
+```
+{
+  "status": "confirmed",
+  "statistics": {
+            "ファイル名": "XX.mp4",
+            "チェック日時": "2022-07-14 20:55:23",
+            "解像度チェック": "OK",
+            "解像度タイプ": "FHD",
+            "アスペクト比チェック": "OK",
+            "アスペクト比": "16:9",
+            "動画の長さチェック": "OK",
+            "動画の長さコメント": "OK",
+            "ファイルサイズチェック": "OK",
+            "ファイルサイズコメント": "OK"
+          }
+}
 ```
 
-| Item | Description |
-| :--  | :--  |
-| file_name | チェック対象の動画ファイル名 |
-| resolution_status | OK/NG（デフォルトの判定基準と合致するか）|
-| resolution_type" | SD/HD/FullHD/WQHD/4K（合致しない場合は`NON STANDARD`）|
-| aspect_status | OK/NG（デフォルトの判定基準と合致するか）|
-| aspect_ratio | 判定アスペクト比（合致しない場合は動画の縦横長）|
-| duration_status | OK/NG（動画長が上限下限に収まっているか）|
-| duration_description | 下限を下回る場合: The media duration is shorter than {下限値} minutes. <br>上限下限に収まっている場合: Appropriate media duration. <br>上限を超えている場合: The media duration is longer than {上限値} minutes. |
-| size_status | OK/NG（動画容量が上限値を超えていないか) |
-| size_description | 動画容量が規定値以内: Appropriate media size. <br>動画容量が規定値を超過している場合: The media size exceeds {上限値} MiB.|
+- エラー時
+```
+{
+  "status": "invalid_format",
+  "statistics": {
+            "ファイル名": "XX.mp4",
+            "チェック日時": "2022-07-14 20:55:23",
+            "解像度チェック": "NG",
+            "解像度タイプ": "Non Standard",
+            "アスペクト比チェック": "NG",
+            "アスペクト比": "1728 x 1080",
+            "動画の長さチェック": "NG",
+            "動画の長さコメント": "基準値（20分）を超えています",
+            "ファイルサイズチェック": "NG",
+            "ファイルサイズコメント": "基準値（2GB）を超えています"
+          }
+}
+```
 
-## S3格納例
-```bash
-# ファイル指定
-## --s3 <bucket name>
-$ python3 media_checker.py --input XX --s3 <bucket name>
-s3://<bucket name>/merge.json
-
-## --s3 <bucket name> --eachfile
-$ python3 media_checker.py --input XX --s3 <bucket name> --eachfile
-s3://<bucket name>/XX.json
-
-# ディレクトリ指定
-## --s3 <bucket name>
-$ python3 media_checker.py --input media --s3 <bucket name>
-s3://<bucket name>/merge.json
-
-## --s3 <bucket name> --eachfile
-$ python3 media_checker.py --input media --s3 <bucket name> --eachfile
-s3://<bucket name>/XX.json
-s3://<bucket name>/YY.json
-s3://<bucket name>/ZZ.json
+- MP4以外がアップロードされた場合
+```
+{
+  "status": "invalid_format",
+  "statistics": {
+      "ファイル名": XX.mp3,
+      "チェック日時": 2022-07-14 20:55:23,
+      "ファイルフォーマット": "ファイルの読み込みに失敗しました"
+    }
+}
 ```
