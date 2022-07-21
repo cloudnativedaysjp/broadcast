@@ -69,8 +69,8 @@ def command_put(args):
     if os.getenv('TOKEN') is None or \
             os.getenv('DREAMKAST_DOMAIN') is None:
         # 環境変数の存在が確認できない場合、その旨をSlack通知し処理を終了する
-        message = "subject: $TOKEN" + '\r\n' +\
-                  "環境変数の読み込みに失敗しました"
+        message = "`subject`: $TOKEN or $DREAMKAST_DOMAIN" + '\r\n' +\
+                  "`reason`: 環境変数の読み込みに失敗しました"
         _send_errlog_to_slack(message)
         sys.exit(1)
 
@@ -139,10 +139,12 @@ def command_put(args):
                     except:
                         # Dk連携が失敗した場合にSlack通知
                         import traceback
-                        message = "subject: " + filename + '\r\n' +\
-                                  "reason: Dk連携に失敗しました" + '\r\n' +\
-                                  "error detail: " + '\r\n' +\
-                                  traceback.format_exc()
+                        message = "`subject`: " + filename + '\r\n' +\
+                                  "`reason`: Dk連携に失敗しました" + '\r\n' +\
+                                  "`error detail`: " + '\r\n' +\
+                                  "```" + '\r\n' +\
+                                  traceback.format_exc() +\
+                                  "```"
                         _send_errlog_to_slack(message)
                         sys.exit(1)
 
@@ -154,10 +156,12 @@ def command_put(args):
                 except KeyError:
                     # 動画情報の取得に失敗した場合にSlack通知
                     import traceback
-                    message = "subject: " + latest_file + '\r\n' +\
-                              "reason: 動画情報の取得に失敗しました" + '\r\n' +\
-                              "error detail: " + '\r\n' +\
-                              traceback.format_exc()
+                    message = "`subject`: " + latest_file + '\r\n' +\
+                              "`reason`: 動画情報の取得に失敗しました" + '\r\n' +\
+                              "`error detail`: " + '\r\n' +\
+                              "```" + '\r\n' +\
+                              traceback.format_exc() +\
+                              "```"
                     _send_errlog_to_slack(message)
                     continue
 
@@ -186,10 +190,12 @@ def command_put(args):
                 except:
                     # Dk連携が失敗した場合にSlack通知
                     import traceback
-                    message = "subject: " + filename + '\r\n' +\
-                              "reason: Dk連携に失敗しました" + '\r\n' +\
-                              "error detail: " + '\r\n' +\
-                              traceback.format_exc()
+                    message = "`subject`: " + filename + '\r\n' +\
+                              "`reason`: Dk連携に失敗しました" + '\r\n' +\
+                              "`error detail`: " + '\r\n' +\
+                              "```" + '\r\n' +\
+                              traceback.format_exc() +\
+                              "```"
                     _send_errlog_to_slack(message)
                     sys.exit(1)
 
