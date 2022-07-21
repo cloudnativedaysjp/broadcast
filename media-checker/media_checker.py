@@ -54,7 +54,7 @@ vertical_criteria_ratio = 9
 
 # デフォルトのファイルサイズ(MB)判定基準
 size_upper_limit = 2000
-size_flag = True
+size_flag = False
 
 
 def main():
@@ -103,8 +103,8 @@ def command_put(args):
     list_of_dirs = glob.glob("".join(args.input) + '/*')
     for row in list_csv_file:
         for dirs in list_of_dirs:
-            dirs = dirs.split('/')[-1]
-            if dirs.split('_')[0] == row[0]:
+            directory = dirs.split('/')[-1]
+            if directory.split('_')[0] == row[0]:
                 list_of_files = glob.glob("".join(args.input) + '/' + row[0] + '*' + '/*')
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
@@ -201,7 +201,7 @@ def command_put(args):
 
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
-                newpath = input_dir + "/" + dirs + "/" + row[1] + ".mp4"
+                newpath = input_dir + "/" + directory + "/" + row[1] + ".mp4"
                 os.rename(oldpath, newpath)
 
             else:
@@ -231,16 +231,32 @@ def command_stdout(args):
                         }
                 media_status.append(err_body)
                 continue
-            filename = filename.split('/')[-1]
-            media_status_dict = _create_media_status(media_width,
-                                                     media_height,
-                                                     media_duration,
-                                                     media_size,
-                                                     duration_upper_limit,
-                                                     duration_lower_limit,
-                                                     filename)
 
-            media_status.append(media_status_dict)
+            filename = filename.split('/')[-1]
+
+            # 最新のファイルがMP4形式ではない場合
+            if filename.split('.')[1] != "mp4":
+                check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
+                non_mp4 = {
+                        "status": "invalid_format",
+                        "statistics": {
+                            "ファイル名": filename,
+                            "チェック日時": check_datetime,
+                            "ファイルフォーマット": "ファイルの読み込みに失敗しました"
+                            }
+                        }
+                media_status.append(non_mp4)
+            else:
+
+                media_status_dict = _create_media_status(media_width,
+                                                        media_height,
+                                                        media_duration,
+                                                        media_size,
+                                                        duration_upper_limit,
+                                                        duration_lower_limit,
+                                                        filename)
+
+                media_status.append(media_status_dict)
 
     print(json.dumps(media_status, ensure_ascii=False))
 
@@ -275,12 +291,15 @@ def _get_media_info(filename):
             stderr=subprocess.PIPE,
             text=True
         )
-    media_data = json.loads(proc_mediainfo.stdout)
+    media_datas = json.loads(proc_mediainfo.stdout)
 
-    media_width = media_data['streams'][0]['width']
-    media_height = media_data['streams'][0]['height']
-    media_duration = int(media_data['format']['duration'].split('.')[0])
-    media_size = int(media_data['format']['size'])
+    for media_data in media_datas['streams']:
+        if media_data['codec_type'] == "video" and media_data['codec_name'] == "h264":
+            media_width = media_data['width']
+            media_height = media_data['height']
+            media_duration = int(media_data['duration'].split('.')[0])
+            # media_size = int(media_data['size'])
+            media_size = 0
 
     return media_width, media_height, media_duration, media_size
 
