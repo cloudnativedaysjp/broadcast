@@ -48,7 +48,8 @@ require_resolutions = [
     ]
 
 # デフォルトの解像度判定基準
-target_ratio = require_resolutions[2]["ratio"]
+lower_target_ratio = require_resolutions[1]["ratio"]
+upper_target_ratio = require_resolutions[2]["ratio"]
 horizontal_criteria_ratio = 16
 vertical_criteria_ratio = 9
 
@@ -207,6 +208,19 @@ def command_put(args):
             else:
                 continue
 
+    # 処理の最後にフォルダの再スキャン
+    cmd = [
+        'docker-compose',
+        'exec',
+        '-u',
+        'www-data',
+        'app',
+        './occ',
+        'groupfolder:scan',
+        '1'
+    ]
+    subprocess.call(cmd)
+
 
 def command_stdout(args):
     # 対象フォルダ配下の動画の情報をすべて標準出力する
@@ -330,8 +344,11 @@ def _create_media_status(
     check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
 
     # 解像度チェック
-    if media_width < require_resolutions[target_ratio]["width"] or \
-            media_height < require_resolutions[target_ratio]["height"]:
+    if media_width < require_resolutions[lower_target_ratio]["width"] or \
+            media_height < require_resolutions[lower_target_ratio]["height"]:
+        resolution_status = "NG"
+    elif require_resolutions[upper_target_ratio]["width"] < media_width or \
+            require_resolutions[upper_target_ratio]["height"] < media_height:
         resolution_status = "NG"
     else:
         resolution_status = "OK"
@@ -350,12 +367,14 @@ def _create_media_status(
     # 解像度が標準規格に沿っているかをチェックする
     for resolution_definition in require_resolutions:
         # check if standard
-        if media_width == resolution_definition["width"] and\
+        if media_width == resolution_definition["width"] and \
                 media_height == resolution_definition["height"]:
             set_ratio = resolution_definition["ratio"]
-            if set_ratio == target_ratio:
+            if set_ratio == lower_target_ratio or \
+                    set_ratio == upper_target_ratio:
                 resolution_status = "OK"
-            elif set_ratio != target_ratio:
+            elif set_ratio != lower_target_ratio or \
+                    set_ratio != upper_target_ratio:
                 resolution_status = "NG"
             resolution_type = resolution_definition["type"]
 
