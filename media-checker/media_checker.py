@@ -232,21 +232,21 @@ def command_stdout(args):
     list_of_dirs = glob.glob("".join(args.input) + '/*')
     for list_of_each_dirs in list_of_dirs:
         list_of_files = glob.glob(list_of_each_dirs + '/*')
-        for filename in list_of_files:
+        for base_filename in list_of_files:
             try:
-                media_width, media_height, media_duration, media_size = _get_media_info(filename)
+                media_width, media_height, media_duration, media_size = _get_media_info(base_filename)
             except KeyError:
                 err_body = {
                         "status": "invalid_format",
                         "statistics": {
-                            "ファイル名": filename,
+                            "ファイル名": base_filename,
                             "ファイルフォーマット": "ファイルの読み込みに失敗しました"
                             }
                         }
                 media_status.append(err_body)
                 continue
 
-            filename = filename.split('/')[-1]
+            filename = base_filename.split('/')[-1]
 
             # 最新のファイルがMP4形式ではない場合
             if filename.split('.')[1] != "mp4":
@@ -254,7 +254,7 @@ def command_stdout(args):
                 non_mp4 = {
                         "status": "invalid_format",
                         "statistics": {
-                            "ファイル名": filename,
+                            "ファイル名": base_filename,
                             "チェック日時": check_datetime,
                             "ファイルフォーマット": "ファイルの読み込みに失敗しました"
                             }
@@ -269,6 +269,8 @@ def command_stdout(args):
                                                         duration_upper_limit,
                                                         duration_lower_limit,
                                                         filename)
+
+                media_status_dict["statistics"]["ファイル名"] = base_filename
 
                 media_status.append(media_status_dict)
 
@@ -413,7 +415,6 @@ def _create_media_status(
     media_status_dict = {
         "status": "confirmed",
         "statistics": {
-            "ファイル名": filename,
             "チェック日時": check_datetime,
             "解像度チェック": resolution_status,
             "解像度タイプ": resolution_type,
