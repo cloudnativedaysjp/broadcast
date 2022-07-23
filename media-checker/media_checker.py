@@ -121,7 +121,7 @@ def command_put(args):
                             "status": "invalid_format",
                             "statistics": {
                                 "ファイル名": filename,
-                                "チェック日時": check_datetime,
+                                "最終チェック日時": check_datetime,
                                 "ファイルフォーマット": "ファイルの読み込みに失敗しました"
                                 }
                             }
@@ -255,7 +255,7 @@ def command_stdout(args):
                         "status": "invalid_format",
                         "statistics": {
                             "ファイル名": base_filename,
-                            "チェック日時": check_datetime,
+                            "最終チェック日時": check_datetime,
                             "ファイルフォーマット": "ファイルの読み込みに失敗しました"
                             }
                         }
@@ -415,7 +415,7 @@ def _create_media_status(
     media_status_dict = {
         "status": "confirmed",
         "statistics": {
-            "チェック日時": check_datetime,
+            "最終チェック日時": check_datetime,
             "解像度チェック": resolution_status,
             "解像度タイプ": resolution_type,
             "アスペクト比チェック": aspect_status,
