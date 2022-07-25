@@ -219,7 +219,7 @@ def command_put(args):
         'groupfolder:scan',
         '1'
     ]
-    subprocess.call(cmd)
+    subprocess.call(cmd, '/home/ubuntu/nextcloud')
 
 
 def command_stdout(args):
