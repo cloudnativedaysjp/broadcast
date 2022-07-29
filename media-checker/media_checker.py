@@ -106,49 +106,11 @@ def command_put(args):
         for dirs in list_of_dirs:
             directory = dirs.split('/')[-1]
             if directory.split('_')[0] == row[0]:
-                list_of_files = glob.glob("".join(args.input) + '/' + row[0] + '*' + '/*')
+                list_of_files = glob.glob("".join(args.input) + '/' + row[0] + '*' + '/*.mp4')
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
                     latest_file = max(list_of_files, key=os.path.getctime)
                 except ValueError:
-                    continue
-
-                # 最新のファイルがMP4形式ではない場合
-                if latest_file.split('.')[1] != "mp4":
-                    filename = latest_file.split('/')[-1]
-                    check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
-                    non_mp4 = {
-                            "status": "invalid_format",
-                            "statistics": {
-                                "ファイル名": filename,
-                                "最終チェック日時": check_datetime,
-                                "ファイルフォーマット": "ファイルの読み込みに失敗しました"
-                                }
-                            }
-                    # Return to Dk
-                    talkid = row[0]
-                    url = 'https://' + os.getenv('DREAMKAST_DOMAIN') + '/api/v1/talks/' + talkid + '/video_registration'
-                    header = {'Authorization': 'Bearer ' + os.getenv('TOKEN')}
-                    put_data = json.dumps(non_mp4, ensure_ascii=False)
-
-                    dk_nonmp4_req = urllib.request.Request(url,
-                                                           headers=header,
-                                                           data=put_data.encode(),
-                                                           method='PUT')
-                    try:
-                        urllib.request.urlopen(dk_nonmp4_req)
-                    except:
-                        # Dk連携が失敗した場合にSlack通知
-                        import traceback
-                        message = "`subject`: " + filename + '\r\n' +\
-                                  "`reason`: Dk連携に失敗しました" + '\r\n' +\
-                                  "`error detail`: " + '\r\n' +\
-                                  "```" + '\r\n' +\
-                                  traceback.format_exc() +\
-                                  "```"
-                        _send_errlog_to_slack(message)
-                        sys.exit(1)
-
                     continue
 
                 # 最新ファイルの動画情報を生成する
@@ -248,7 +210,7 @@ def command_stdout(args):
 
             filename = base_filename.split('/')[-1]
 
-            # 最新のファイルがMP4形式ではない場合
+            # ファイルがMP4形式ではない場合
             if filename.split('.')[1] != "mp4":
                 check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
                 non_mp4 = {
@@ -260,8 +222,8 @@ def command_stdout(args):
                             }
                         }
                 media_status.append(non_mp4)
-            else:
 
+            else:
                 media_status_dict = _create_media_status(media_width,
                                                         media_height,
                                                         media_duration,
