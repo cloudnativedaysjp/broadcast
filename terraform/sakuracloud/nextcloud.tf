@@ -57,8 +57,8 @@ resource "sakuracloud_server" "nextcloud" {
     sakuracloud_disk.nextcloud_data.id,
     sakuracloud_disk.nextcloud_backup.id
   ]
-  core        = 4
-  memory      = 8
+  core        = 2
+  memory      = 4
   description = "Nextcloud server"
   tags        = ["app=nextcloud", "stage=production", "starred"]
 
