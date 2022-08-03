@@ -20,3 +20,11 @@ ip route | grep 'default via' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0
 ## 要件
 - Python >= 3.7  を接続元マシンに導入していること
 - obs-websocket >= **5.0.0** を接続先 OBS に導入していること
+
+
+## memo: ソース (input) を作成する
+GetInputSettings でパラメータの入れ方を取得して、 CreateInput の inputSettings に指定すると良さそう
+
+| ソース名 |GetInputSettings した Raw Data 一例|
+| --- | --- |
+| 画像 | {'defaultInputSettings': {'linear_alpha': False, 'unload': False}, 'inputKind': 'image_source', 'inputName': '画像', 'inputSettings': {'file': '/Users/g.kunimi/Nextcloud2/Broadcast/CNSec2022/Sync/Media/z-common/蓋絵_white_00000.png'}, 'unversionedInputKind': 'image_source'} |

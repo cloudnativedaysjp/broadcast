@@ -7,7 +7,7 @@ import os
 ### コネクション試験などに使えるサンプル https://github.com/IRLToolkit/simpleobsws/blob/master/samples/sample_events.py
 
 parameters = simpleobsws.IdentificationParameters() # Create an IdentificationParameters object
-parameters.eventSubscriptions = (1 << 0) | (1 << 2) # Subscribe to the General and Scenes categories
+# parameters.eventSubscriptions = (1 << 0) | (1 << 2) # Subscribe to the General and Scenes categories
 
 HOST = os.environ["WSHOST"]
 PORT = os.environ["WSPORT"]
