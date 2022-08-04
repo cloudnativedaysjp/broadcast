@@ -3,6 +3,6 @@
 *.old.py
 __pycache__
 *.spec
-dist/
+# dist/
 build/
 *.log
