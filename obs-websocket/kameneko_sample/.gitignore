@@ -1,0 +1,8 @@
+.token
+*.json
+*.old.py
+__pycache__
+*.spec
+# dist/
+build/
+*.log
