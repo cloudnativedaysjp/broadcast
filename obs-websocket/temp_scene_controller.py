@@ -55,6 +55,8 @@ class TempSceneController:
             if i >= self.MAKUAI_ID_FIRSTSESSION_INDEX:
                 makuai_id = i - self.MAKUAI_ID_FIRSTSESSION_INDEX
                 requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_makuai_media", 'inputKind': 'vlc_source', 'inputSettings': {'playlist': [{'hidden': False, 'selected': False, 'value': f"/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/broadcast-{session['track_id']}/makuai/{makuai_id}.mp4"}, {'hidden': False, 'selected': False, 'value': '/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/z-common/cm'}]}}))
+                # アスペクト比フィルター
+                requests.append(simpleobsws.Request('CreateSourceFilter', {'sourceName': f"{session['id']}_makuai_media", 'filterName': 'スケーリング/アスペクト比', 'filterKind': 'scale_filter', 'filterSettings': {'resolution': '1920x1080'}}))
 
             # 登壇シーン
             name = f"{session['id']}_{session['date'][8:10]}{session['track_id']}_{session['start_to_end']}_{session['title'][0:16]}"
@@ -66,6 +68,8 @@ class TempSceneController:
                 # オープニング向けサイマル RTMP ソースを追加
                 # TODO: サイマルじゃなくて動画になりそう
                 requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_media", 'inputKind': 'ffmpeg_source', 'inputSettings': {'buffering_mb': 0, 'input': 'rtmp://nginx01.cloudnativedays.jp:10002/live/cnsec2022', 'is_local_file': False, 'restart_on_activate': False}}))
+                # アスペクト比フィルター
+                requests.append(simpleobsws.Request('CreateSourceFilter', {'sourceName': f"{session['id']}_media", 'filterName': 'スケーリング/アスペクト比', 'filterKind': 'scale_filter', 'filterSettings': {'resolution': '1920x1080'}}))
 
             if session['presentation_method']=='オンライン登壇':
 
@@ -76,10 +80,15 @@ class TempSceneController:
                     requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_media", 'inputKind': 'ffmpeg_source', 'inputSettings': {'buffering_mb': 0, 'input': 'rtmp://nginx01.cloudnativedays.jp:10002/live/cnsec2022', 'is_local_file': False, 'restart_on_activate': False}}))
                 elif session['track_id']=='C':
                     requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_media", 'inputKind': 'ffmpeg_source', 'inputSettings': {'buffering_mb': 0, 'input': 'rtmp://nginx02.cloudnativedays.jp:10002/live/cnsec2022', 'is_local_file': False, 'restart_on_activate': False}}))
+                # アスペクト比フィルター
+                requests.append(simpleobsws.Request('CreateSourceFilter', {'sourceName': f"{session['id']}_media", 'filterName': 'スケーリング/アスペクト比', 'filterKind': 'scale_filter', 'filterSettings': {'resolution': '1920x1080'}}))
 
             elif session['presentation_method']=='事前収録':
                 # VLC ソースを追加
-                requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_media",  'inputKind': 'vlc_source', 'inputSettings': {'loop': False, 'playlist': [{'hidden': False, 'selected': True, 'value': '/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/z-common/CNSec_Countdown60.mp4'}, {'hidden': False, 'selected': False, 'value': f"/home/ubuntu/Nextcloud2/cnsec2022/{session['id']}_{session['title']}/{session['title']}.mp4"}]}}))
+                escapedtitle = str(session['title']).replace('/', '_')
+                requests.append(simpleobsws.Request('CreateInput', {'sceneName': f"{name}", 'inputName':  f"{session['id']}_media",  'inputKind': 'vlc_source', 'inputSettings': {'loop': False, 'playlist': [{'hidden': False, 'selected': True, 'value': '/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/z-common/CNSec_Countdown60.mp4'}, {'hidden': False, 'selected': False, 'value': f"/home/ubuntu/Nextcloud2/cnsec2022/{session['id']}_{escapedtitle}/{escapedtitle}.mp4"}]}}))
+                # アスペクト比フィルター
+                requests.append(simpleobsws.Request('CreateSourceFilter', {'sourceName': f"{session['id']}_media", 'filterName': 'スケーリング/アスペクト比', 'filterKind': 'scale_filter', 'filterSettings': {'resolution': '1920x1080'}}))
 
 
 
@@ -100,8 +109,8 @@ class TempSceneController:
         await ws.disconnect() # Disconnect from the websocket server cleanly
 
 # controller = TempSceneController('cnsec2022_2022-08-05_A.csv')
-controller = TempSceneController('cnsec2022_2022-08-05_B.csv')
-# controller = TempSceneController('cnsec2022_2022-08-05_C.csv')
+# controller = TempSceneController('cnsec2022_2022-08-05_B.csv')
+controller = TempSceneController('cnsec2022_2022-08-05_C.csv')
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(controller.create_scenes())

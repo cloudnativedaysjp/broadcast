@@ -22,7 +22,7 @@ ip route | grep 'default via' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0
 - obs-websocket >= **5.0.0** を接続先 OBS に導入していること
 
 
-## memo: ソース (input) を作成する
+## ソース (input) を作成する
 GetInputSettings でパラメータの入れ方を取得して、 CreateInput の inputSettings に指定すると良さそう
 
 | ソース名 | CreateInput の Data 一例|
@@ -35,3 +35,8 @@ GetInputSettings でパラメータの入れ方を取得して、 CreateInput �
 
 ## 既存のソースをシーンに追加する
 CreateSceneItem
+
+## フィルターをソースに追加する
+| フィルター名 | CreateSourceFilter の一例 |
+| --- | --- |
+| アスペクト比 | {'sourceName': '1466_makuai_media', 'filterName': 'スケーリング/アスペクト比', 'filterKind': 'scale_filter', 'filterSettings': {'resolution': '1920x1080'}}

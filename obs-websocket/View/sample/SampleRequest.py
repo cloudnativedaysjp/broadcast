@@ -16,7 +16,7 @@ async def make_request():
     await ws.connect() # Make the connection to obs-websocket
     await ws.wait_until_identified() # Wait for the identification handshake to complete
 
-    request = simpleobsws.Request('GetInputSettings', {'inputName': 'VLCビデオソース'}) # Build a Request object
+    request = simpleobsws.Request('GetSourceFilter', {'sourceName': '1468_media',  'filterName': 'スケーリング/アスペクト比'}) # Build a Request object
     # request = simpleobsws.Request('CreateInput', {'sceneName': 'Opening', 'inputName': '画像 from Python setting', 'inputKind': 'image_source', 'inputSettings': {'file': '/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/z-common/蓋絵_white_00000.png'}}) # Build a Request object
     # request = simpleobsws.Request('CreateInput', {'sceneName': "Opening", 'inputName':  "Opening_media", 'inputKind': 'ffmpeg_source', 'inputSettings': {'local_file': '/home/ubuntu/Nextcloud/Broadcast/CNSec2022/Sync/Media/z-common/幕間.mp4', 'looping': True}}) # Build a Request object
 
