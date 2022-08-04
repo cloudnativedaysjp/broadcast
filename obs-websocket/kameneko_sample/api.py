@@ -16,12 +16,12 @@ track_list = {
 }
 
 # デバッグ用
-now = datetime.datetime.fromisoformat('2022-08-01T15:05:00.000+09:00')
+# now = datetime.datetime.fromisoformat('2022-08-01T15:05:00.000+09:00')
 
 def get_talks_5m(talks:list):
     
     within_5m = dict()
-    # now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
     now_5m = now + datetime.timedelta(minutes=5)
     logger.debug("check time   : {}".format(now.time()))
 
@@ -94,7 +94,7 @@ def post_slack_now(talk_title:string, talk_track:string, webhook_url:string):
     post_slack(message ,webhook_url)
 
 def check_talk_now(talk:dict):
-    # now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
     logger.debug("check time   : {}".format(now.time()))
 
     start_time = datetime.datetime.fromisoformat(talk['startTime'])
@@ -106,7 +106,7 @@ def check_talk_now(talk:dict):
         return False
 
 def check_talk_90s(talk:dict):
-    # now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
     now_90s = now + datetime.timedelta(seconds=90)
     logger.debug("check time   : {}".format(now.time()))
 
