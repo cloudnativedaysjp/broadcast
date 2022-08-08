@@ -1,0 +1,6 @@
+services:
+  nginx:
+    image: tiangolo/nginx-rtmp
+    ports:
+      - "10002:1935"
+    restart: always
