@@ -26,6 +26,12 @@ resource "sakuracloud_packet_filter_rules" "switcher_rules" {
   expression {
     protocol         = "tcp"
     destination_port = "22"
+    source_network   = "153.246.198.141"
+  }
+
+  expression {
+    protocol         = "tcp"
+    destination_port = "22"
   }
 
   expression {

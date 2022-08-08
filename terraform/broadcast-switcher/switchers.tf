@@ -1,15 +1,6 @@
 locals {
   ## NOTE: Please modify this if you want to add a new switcher instance.
   switchers = [
-    {
-      hostname = "switcher01"
-    },
-    {
-      hostname = "switcher02"
-    },
-    {
-      hostname = "switcher03"
-    },
   ]
 }
 

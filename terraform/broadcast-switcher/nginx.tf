@@ -1,15 +1,6 @@
 locals {
   ## NOTE: Please modify this if you want to add a new instance.
   instances = [
-    {
-      hostname = "nginx01"
-    },
-    {
-      hostname = "nginx02"
-    },
-    {
-      hostname = "nginx03"
-    },
   ]
 }
 
