@@ -20,6 +20,6 @@ s3://dreamkast-ivs-stream-archive-prd/mediapackage/cnsec2022/talks/ に `{talk_i
 https://s3.console.aws.amazon.com/s3/buckets/dreamkast-ivs-stream-archive-prd?prefix=mediapackage/cnsec2022/talks/&region=us-east-1 
 
 ## dk 管理画面で video_id の指定
-https://event.cloudnativedays.jp/cnsec2022/admin/talks の talk_id を指定して保存
+https://event.cloudnativedays.jp/cnsec2022/admin/talks で talk_id に作成した m3u8 指定して保存
 
-`https://d3pun3ptcv21q4.cloudfront.net/medialive/cnsec2022/talks/{talk_id}/{上で指定した適当な2桁数字}/playlist.m3u8`
+`https://d3pun3ptcv21q4.cloudfront.net/mediapackage/cnsec2022/talks/{talk_id}/{上で指定した適当な2桁数字}/playlist.m3u8`
