@@ -1,6 +1,9 @@
 locals {
   ## NOTE: Please modify this if you want to add a new switcher instance.
   switchers = [
+    "switcher01",
+    "switcher02",
+    "switcher03",
   ]
 }
 

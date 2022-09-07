@@ -1,6 +1,7 @@
 locals {
   ## NOTE: Please modify this if you want to add a new instance.
   instances = [
+    "nginx01",
   ]
 }
 

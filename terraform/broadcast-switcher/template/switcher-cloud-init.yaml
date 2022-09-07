@@ -17,7 +17,11 @@ users:
     - gh:TakumaNakagame
     - gh:capsmalt
     - gh:Gaku-Kunimi
-    - gh:ryojsb
+    - gh:tanayan299
+    - gh:onarada
+    - gh:ijokarumawak
+    - gh:tkc66-buzz
+    - gh:morimorikun51
 system_info: 
   default_user:
     name: default-user
@@ -45,3 +49,4 @@ packages:
 runcmd:
   - sudo x11vnc -storepasswd ${vnc_password} /etc/.vncpasswd  
   - curl -sSL https://raw.githubusercontent.com/cloudnativedaysjp/broadcast/main/switcher/setup.sh | sh -
+  - curl -sSL https://raw.githubusercontent.com/cloudnativedaysjp/broadcast/main/switcher/install-docker.sh | sh -
