@@ -30,6 +30,10 @@ locals {
       name = "jacopen",
       ip   = "127.0.0.1"
     },
+    {
+      name = "ijokarumawak",
+      ip   = "114.146.66.9"
+    }
   ]
 }
 
