@@ -17,10 +17,12 @@ users:
     - gh:TakumaNakagame
     - gh:capsmalt
     - gh:Gaku-Kunimi
-    - gh:ryojsb
     - gh:inductor
     - gh:tanayan299
     - gh:onarada
+    - gh:ijokarumawak
+    - gh:tkc66-buzz
+    - gh:morimorikun51
 system_info: 
   default_user:
     name: default-user
