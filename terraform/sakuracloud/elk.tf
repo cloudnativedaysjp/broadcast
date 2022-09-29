@@ -3,7 +3,7 @@ resource "sakuracloud_disk" "elk" {
   source_archive_id = data.sakuracloud_archive.ubuntu.id
   plan              = "ssd"
   connector         = "virtio"
-  size              = 512
+  size              = 500
 
   lifecycle {
     ignore_changes = [
