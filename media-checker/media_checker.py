@@ -116,7 +116,7 @@ def command_put(args):
                 # 最新ファイルの動画情報を生成する
                 try:
                     media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
-                except KeyError:
+                except (KeyError, UnboundLocalError):
                     # 動画情報の取得に失敗した場合にSlack通知
                     import traceback
                     message = "`subject`: " + latest_file + '\r\n' +\
@@ -197,7 +197,7 @@ def command_stdout(args):
         for base_filename in list_of_files:
             try:
                 media_width, media_height, media_duration, media_size = _get_media_info(base_filename)
-            except KeyError:
+            except (KeyError, UnboundLocalError):
                 err_body = {
                         "status": "invalid_format",
                         "statistics": {
@@ -218,7 +218,7 @@ def command_stdout(args):
                         "statistics": {
                             "ファイル名": base_filename,
                             "最終チェック日時": check_datetime,
-                            "ファイルフォーマット": "ファイルの読み込みに失敗しました"
+                            "ファイルフォーマット": "ファイルの読み込みに失敗しました(non mp4 format)"
                             }
                         }
                 media_status.append(non_mp4)
@@ -244,7 +244,7 @@ def _get_media_info(filename):
     対象の動画ファイルの情報を取得する
 
     Args:
-        filename(str): 情報取得対象のファイル名
+        filename(str): 情報取得対象のファイル名(フルパス)
     Returns:
         media_width(int): 動画の横幅(px)
         media_height(int): 動画の縦幅(px)
@@ -276,8 +276,7 @@ def _get_media_info(filename):
             media_width = media_data['width']
             media_height = media_data['height']
             media_duration = int(media_data['duration'].split('.')[0])
-            # media_size = int(media_data['size'])
-            media_size = 0
+    media_size = os.path.getsize(filename)
 
     return media_width, media_height, media_duration, media_size
 
