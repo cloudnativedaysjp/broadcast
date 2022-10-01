@@ -113,6 +113,10 @@ def command_put(args):
                 except ValueError:
                     continue
 
+                # .part がファイル名の末尾に付与されている場合は処理をスキップする
+                if latest_file.split('.')[-1] == "part":
+                    continue
+
                 # 最新ファイルの動画情報を生成する
                 try:
                     media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
@@ -164,7 +168,8 @@ def command_put(args):
 
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
-                newpath = input_dir + "/" + directory + "/" + row[1] + ".mp4"
+                newpath_filename = print(row[1].replace('/', '_'))
+                newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
                 os.rename(oldpath, newpath)
 
             else:
