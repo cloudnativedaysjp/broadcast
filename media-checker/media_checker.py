@@ -10,6 +10,7 @@ import json
 import jwt
 import subprocess
 import os
+import shutil
 import sys
 import urllib.request
 import urllib.error
@@ -180,15 +181,15 @@ def command_put(args):
                 oldpath = latest_file
                 newpath_filename = print(row[1].replace('/', '_'))
                 newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
+                newpath_volmod = input_dir + "/" + directory + "/" + newpath_filename + "_mod.mp4"
 
-                # 動画音量の規格化を行う
+                # 動画音量の規格化を行う(新旧ファイルを保持)
                 max_vol = _check_volume(latest_file)
                 if max_vol.split("-")[1] != "0.0":
-                    _volume_converter(max_vol, oldpath, newpath)
-                    # if os.path.isfile(oldpath) and os.path.isfile(newpath):
-                    #     os.remove(oldpath)
+                    _volume_converter(max_vol, oldpath, newpath_volmod)
                 else:
-                    os.rename(oldpath, newpath)
+                    if oldpath != newpath:
+                        shutil.copy(oldpath, newpath)
 
             else:
                 continue
