@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+from collections import OrderedDict
 import csv
-from datetime import datetime
+import datetime
 import glob
 import json
+import jwt
 import subprocess
 import os
 import sys
@@ -65,14 +67,22 @@ def main():
 
 
 def command_put(args):
-    # Dk連携用の環境変数がセットされているかを確認する
+    # 変数読み込み
+    json_open = open('./media_checker_env.json', 'r')
+    json_load = json.load(json_open)
+
+    # Dk API tokenの有効期限を確認し、期限切れの場合は更新する
+    if not _dk_token_check(json_load['TOKEN']):
+        _dk_token_update(json_load['AUTH0_DOMAIN'], json_load['AUDIENCE'], json_load['CLIENT_ID'], json_load['CLIENT_SECRET'])
+
+    # Dk連携用の変数がセットできていることを確認する
     # 環境変数($TOKEN/$DREAMKAST_DOMAIN)の確認
-    if os.getenv('TOKEN') is None or \
-            os.getenv('DREAMKAST_DOMAIN') is None:
+    if json_load['TOKEN'] is None or \
+            json_load['DREAMKAST_DOMAIN'] is None:
         # 環境変数の存在が確認できない場合、その旨をSlack通知し処理を終了する
         message = "`subject`: $TOKEN or $DREAMKAST_DOMAIN" + '\r\n' +\
                   "`reason`: 環境変数の読み込みに失敗しました"
-        _send_errlog_to_slack(message)
+        _send_errlog_to_slack(message, json_load['SLACKURL'])
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
@@ -129,7 +139,7 @@ def command_put(args):
                               "```" + '\r\n' +\
                               traceback.format_exc() +\
                               "```"
-                    _send_errlog_to_slack(message)
+                    _send_errlog_to_slack(message, json_load['SLACKURL'])
                     continue
 
                 filename = row[1] + ".mp4"
@@ -143,8 +153,8 @@ def command_put(args):
 
                 # DkにAPI経由で動画情報を送る
                 talkid = row[0]
-                url = 'https://' + os.getenv('DREAMKAST_DOMAIN') + '/api/v1/talks/' + talkid + '/video_registration'
-                header = {'Authorization': 'Bearer ' + os.getenv('TOKEN')}
+                url = 'https://' + json_load['DREAMKAST_DOMAIN'] + '/api/v1/talks/' + talkid + '/video_registration'
+                header = {'Authorization': 'Bearer ' + json_load['TOKEN']}
                 put_data = json.dumps(media_status_dict, ensure_ascii=False)
 
                 dk_req = urllib.request.Request(url,
@@ -163,7 +173,7 @@ def command_put(args):
                               "```" + '\r\n' +\
                               traceback.format_exc() +\
                               "```"
-                    _send_errlog_to_slack(message)
+                    _send_errlog_to_slack(message, json_load['SLACKURL'])
                     sys.exit(1)
 
                 # Dk連携が完了後、動画をRename
@@ -405,15 +415,15 @@ def _create_media_status(
     return media_status_dict
 
 
-def _send_errlog_to_slack(message):
+def _send_errlog_to_slack(message, slack_url):
     """
     動画チェックの処理に失敗した際にSlack通知する
 
     Args:
         message(str): 発生したエラー詳細
+        slack_url(str): Slack webhook url
     Returns:
     """
-    slack_url = os.getenv('SLACKURL')
     header = {'content-type': 'application/json'}
     base_data = {
             "text": message
@@ -426,6 +436,62 @@ def _send_errlog_to_slack(message):
                                        method='POST')
 
     urllib.request.urlopen(slack_req)
+
+
+def _dk_token_check(token):
+    """
+    dreamkast API tokenの有効期限を確認する
+
+    Args:
+        None
+    Returns:
+        (bool): tokenの期限切れでない場合はTrue
+    """
+    token_payload = jwt.decode(token, verify=False)
+    token_expire = datetime.datetime.fromtimestamp(token_payload['exp'])
+
+    if datetime.datetime.now() < token_expire:
+        return True
+    else:
+        return False
+
+
+def _dk_token_update(domain, audience, client_id, client_secret):
+    """
+    dreamkast API tokenを更新する
+
+    Args:
+    Returns:
+    """
+    url = 'https://' + domain + '/oauth/token'
+    header = {
+        "content-type": "application/json"
+    }
+    data = {
+        "client_id": "",
+        "client_secret": "",
+        "audience": "",
+        "grant_type": "client_credentials"
+    }
+    data['audience'] = audience
+    data['client_id'] = client_id
+    data['client_secret'] = client_secret
+
+    req = urllib.request.Request(url,
+                                 headers=header,
+                                 data=json.dumps(data).encode(),
+                                 method='POST'
+                                 )
+
+    res = urllib.request.urlopen(req)
+    body = json.load(res)
+
+    with open('./media_checker_env.json') as env:
+        update_env = json.load(env, object_pairs_hook=OrderedDict)
+        update_env['TOKEN'] = body['access_token']
+
+    with open('./media_checker_env.json', 'w') as f:
+        json.dump(update_env, f, indent=4, ensure_ascii=False)
 
 
 def get_args():

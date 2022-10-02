@@ -63,13 +63,6 @@ optional arguments:
                         動画の長さの下限の指定(分)
 ```
 
-また `put method` は以下3つの環境変数が設定されていることを前提とします。
-| 環境変数名        | Description                  |
-| :--              | :--                          |
-| TOKEN            | Dk API 利用のための JWT Token |
-| DREAMKAST_DOMAIN | 情報連携先Dk環境              |
-| SLACKURL         | エラー発生時の通知先Slack URL  |
-
 Slack通知は、以下のタイミングで行われます。
 | 契機 | 挙動 |
 | :-- | :-- |
@@ -96,21 +89,17 @@ optional arguments:
 
 ## How to Setup to put method
 `put method` は、`cron`にてX分おきに実行することを想定しています。  
-`cron`でTOKENなどの環境変数を読み込むため、以下2つのcronをセットすることとします。
 
-1. `env_set.sh` を一日一回cronにて実行し、環境変数情報が記載されたファイルを作成する
-2. 1 で作成したファイルをPythonスクリプトが読み込んで実行するように記載する
-
-1. env_set.sh
-スクリプト内の`<CLIENT ID>`, `<CLIENT_SECRET>`, `<SLACK WEBHOOK URL>`, `<PATH TO ENV FILE>`を書き換えたうえで cronで一日一回実行するよう設定する。  
+`put method`実行時は、スクリプトと同じディレクトリに配置されている変数ファイル(media_checker_env.json)を参照します。
+media_checker_env.json 内の変数をあらかじめ更新してください。  
 `<CLIENT ID>`, `<CLIENT_SECRET>`に関しては、[DreamkastのREADME](https://github.com/cloudnativedaysjp/dreamkast#how-to-use-rest-api-for-videoregistration)を参照のこと。
 
 また、**JWT Token発行数には月上限が存在するため、必要以上の実行をしないよう留意する。**
 
-2. media_checker.py put
+**media_checker.py put**
 下記形式でcronをセットする。
 ```
-export $(cat <PATH TO ENV FILE> | xargs); python3 <SCRIPT DIR>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
+python3 <SCRIPT DIR>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
 ```
 
 例えば、下記のようなディレクトリ構造の場合 かつ 動画の長さの判定基準が 20 ~ 45分の場合
@@ -129,11 +118,8 @@ export $(cat <PATH TO ENV FILE> | xargs); python3 <SCRIPT DIR>/media_checker.py 
 
 cronの設定は以下のようになる
 ```bash
-# cronjob for create environmental file
-0 0 * * * <ROOT FOLDER OF MEDIAS>/env_set.sh
-
 # cronjob for media_checker.py
-*/5 * * * * export $(cat <ROOT FOLDER OF MEDIAS>/<ENV FILE> | xargs); python3 <ROOT FOLDER OF MEDIAS>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "45" --lower_limit "20" --csv "<CSV FILE>"
+*/5 * * * * python3 <ROOT FOLDER OF MEDIAS>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "45" --lower_limit "20" --csv "<CSV FILE>"
 ```
 
 
