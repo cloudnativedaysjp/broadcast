@@ -9,7 +9,7 @@ locals {
     },
     {
       hostname = "switcher03"
-    },
+    }
   ]
 }
 

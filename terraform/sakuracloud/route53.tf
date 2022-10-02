@@ -53,3 +53,11 @@ resource "aws_route53_record" "uploader_internal" {
   ttl     = "300"
   records = [sakuracloud_server.uploader.ip_address]
 }
+
+resource "aws_route53_record" "elk" {
+  zone_id = data.aws_route53_zone.cloudnativedays.zone_id
+  name    = "elk.cloudnativedays.jp"
+  type    = "A"
+  ttl     = "300"
+  records = [sakuracloud_server.elk.ip_address]
+}

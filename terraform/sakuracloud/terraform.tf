@@ -9,11 +9,11 @@ terraform {
   required_providers {
     sakuracloud = {
       source  = "sacloud/sakuracloud"
-      version = "~> 2.17.1"
+      version = "~> 2.19.0"
     }
     github = {
       source  = "integrations/github"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
     aws = {
       source  = "hashicorp/aws"

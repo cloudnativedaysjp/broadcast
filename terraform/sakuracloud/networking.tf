@@ -3,6 +3,12 @@ resource "sakuracloud_packet_filter" "nextcloud" {
   description = "Packet filtering rules for nextcloud VM"
 }
 
+data "sakuracloud_switch" "switcher" {
+  filter {
+    names = ["switcher"]
+  }
+}
+
 resource "sakuracloud_packet_filter_rules" "nextcloud_rules" {
   packet_filter_id = sakuracloud_packet_filter.nextcloud.id
 

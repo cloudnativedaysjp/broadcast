@@ -3,13 +3,7 @@ locals {
   instances = [
     {
       hostname = "nginx01"
-    },
-    {
-      hostname = "nginx02"
-    },
-    {
-      hostname = "nginx03"
-    },
+    }
   ]
 }
 

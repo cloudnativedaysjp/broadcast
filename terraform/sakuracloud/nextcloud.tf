@@ -102,6 +102,10 @@ resource "sakuracloud_server" "nextcloud2" {
     packet_filter_id = sakuracloud_packet_filter.nextcloud.id
   }
 
+  network_interface {
+    upstream = data.sakuracloud_switch.switcher.id
+  }
+
   user_data = templatefile("./template/cloud-init.yaml", {
     vm_password = random_password.password.result,
     hostname    = "nextcloud2"
