@@ -180,7 +180,15 @@ def command_put(args):
                 oldpath = latest_file
                 newpath_filename = print(row[1].replace('/', '_'))
                 newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
-                os.rename(oldpath, newpath)
+
+                # 動画音量の規格化を行う
+                max_vol = _check_volume(latest_file)
+                if max_vol.split("-")[1] != "0.0":
+                    _volume_converter(max_vol, oldpath, newpath)
+                    # if os.path.isfile(oldpath) and os.path.isfile(newpath):
+                    #     os.remove(oldpath)
+                else:
+                    os.rename(oldpath, newpath)
 
             else:
                 continue
@@ -227,7 +235,7 @@ def command_stdout(args):
 
             # ファイルがMP4形式ではない場合
             if filename.split('.')[1] != "mp4":
-                check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
+                check_datetime = str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
                 non_mp4 = {
                         "status": "invalid_format",
                         "statistics": {
@@ -319,7 +327,7 @@ def _create_media_status(
         media_status_dict(dict): Dk上にAPI経由で送る動画情報
     """
     # 現在時刻の取得
-    check_datetime = str(datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
+    check_datetime = str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
 
     # 解像度チェック
     if media_width < require_resolutions[lower_target_ratio]["width"] or \
@@ -443,7 +451,7 @@ def _dk_token_check(token):
     dreamkast API tokenの有効期限を確認する
 
     Args:
-        None
+        token(str): 現在保持しているtoken情報
     Returns:
         (bool): tokenの期限切れでない場合はTrue
     """
@@ -461,7 +469,12 @@ def _dk_token_update(domain, audience, client_id, client_secret):
     dreamkast API tokenを更新する
 
     Args:
+        domain(str): Dk API auth domain
+        audience(str): Dk API auth audience
+        client_id(str): Dk API auth client
+        client_secret(str): Dk API auth secret
     Returns:
+        None
     """
     url = 'https://' + domain + '/oauth/token'
     header = {
@@ -492,6 +505,71 @@ def _dk_token_update(domain, audience, client_id, client_secret):
 
     with open('./media_checker_env.json', 'w') as f:
         json.dump(update_env, f, indent=4, ensure_ascii=False)
+
+
+def _check_volume(filename):
+    """
+    動画の音量を確認する
+
+    Args:
+        filename(str): 音量確認対象のファイル名
+    Returns:
+        output_max(str): 動画の最大音量
+    """
+    proc_maxVolume_cmd = [
+            "ffmpeg",
+            "-i",
+            filename,
+            "-vn",
+            "-af",
+            "volumedetect",
+            "-f",
+            "null",
+            "-"
+        ]
+    proc_maxVolume = subprocess.Popen(
+            proc_maxVolume_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+    output = str(proc_maxVolume.stderr.read().decode())
+    output_max = output.split("max_volume: ")[1].split(" dB")[0]
+
+    return output_max
+
+
+def _volume_converter(max_vol, input_file, output_file):
+    """
+    動画ファイルの音量を規格化する
+
+    Args:
+        max_vol(str): 動画の最大音量
+        input_file(str): 変換元のファイル名
+        output_file(str): 変換後のファイル名
+    Returns:
+        None
+    """
+    if "-" in max_vol:
+        calc_val = max_vol.split("-")[1]
+    else:
+        calc_val = "-"+str(max_vol)
+
+    proc_normalize_cmd = [
+            "ffmpeg",
+            "-i",
+            input_file,
+            "-vcodec",
+            "copy",
+            "-af",
+            'volume={}dB'.format(calc_val),
+            output_file
+        ]
+    subprocess.Popen(
+            proc_normalize_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
 
 
 def get_args():
