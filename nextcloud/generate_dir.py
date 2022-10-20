@@ -12,13 +12,12 @@ from nextcloud import NextCloud
 NEXTCLOUD_URL = os.environ.get('NEXTCLOUD_HOSTNAME')
 NEXTCLOUD_USERNAME = os.environ.get('NEXTCLOUD_ADMIN_USER')
 NEXTCLOUD_PASSWORD = os.environ.get('NEXTCLOUD_ADMIN_PASSWORD')
+NEXTCLOUD_DIR_PATH = os.environ.get("/cndt2022/")
+EVENT_TALK_FILE_PATH = os.environ.get("./cndt2022_all_all.csv")
 
-UPLOAD_DIR_NAME = "/upload/"
-
-talkfile_name = "./cfp.csv"
 talks = {}
 
-talks = csv.DictReader(open(talkfile_name, encoding='utf_8', mode='r'))
+talks = csv.DictReader(open(EVENT_TALK_FILE_PATH, encoding='utf_8', mode='r'))
 print("id,title,speaker,url")
 
 with NextCloud(
@@ -33,7 +32,7 @@ with NextCloud(
     for talk in talks:
         dir_name = talk['id'] + "_" + talk['title']
 
-        path = nxc.get_folder(path=UPLOAD_DIR_NAME + dir_name.replace('/', '_'))['href'][27:-1]
+        path = nxc.get_folder(path=NEXTCLOUD_DIR_PATH + dir_name.replace('/', '_'))['href'][27:-1]
 
         share_data = list(filter(lambda item : item['path'] == path, nxc.get_shares().data))
         share = ""
