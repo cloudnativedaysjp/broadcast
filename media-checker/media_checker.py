@@ -456,7 +456,7 @@ def _dk_token_check(token):
     Returns:
         (bool): tokenの期限切れでない場合はTrue
     """
-    token_payload = jwt.decode(token, verify=False)
+    token_payload = jwt.decode(token, options={"verify_signature": False})
     token_expire = datetime.datetime.fromtimestamp(token_payload['exp'])
 
     if datetime.datetime.now() < token_expire:
