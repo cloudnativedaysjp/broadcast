@@ -6,6 +6,7 @@ media checker
 ## Prerequisites
 - Python3
   - pytz
+  - PyJWT
 - ffmpeg
 - jq
 
@@ -14,8 +15,11 @@ media checker
 $ python3 --version
 Python 3.8.10
 
-$ pip3 list | grep pytz
+$ pip3 list
+...
 pytz 2022.1
+PyJWT 1.7.1
+...
 
 $ ffmpeg -version
 ffmpeg version 4.2.7-0ubuntu0.1 Copyright (c) 2000-2022 the FFmpeg developers
@@ -45,17 +49,17 @@ optional arguments:
 ### media_checker.py put
 セッションの最新ファイルごとに動画のチェックを行いその結果をDkにAPI経由で連携します。
 
-セッション動画格納先のROOTディレクトリとセッションリストのCSVを指定し、CSVに記載のあるセッション毎に動画が格納されている場合にチェックを行います。
-セッションフォルダに複数の動画が存在する場合には、タイムスタンプが最新の動画のみをチェックし、その後csvファイルに記載のセッション名にrenameします。
+セッション動画格納先のROOTディレクトリとセッションリストのCSVを指定し、CSVに記載のあるセッション毎に動画が格納されている場合にチェックを行います。  
+セッションフォルダに複数の動画が存在する場合には、タイムスタンプが最新の動画のみを規定に沿うかチェックし音量の規格化を行う。  
+その後csvファイルに記載のセッション名にrenameします。
 
 ```bash
 $ python3 media_checker.py put --help
 
-usage: media_checker.py put [-h] --input INPUT --csv CSV_FILE --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
+usage: media_checker.py put [-h] --csv CSV_FILE --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
 
 optional arguments:
   -h, --help            show this help message and exit
-  --input INPUT         セッション動画格納先ディレクトリ
   --csv CSV_FILE        セッションのCSVリスト
   --upper_limit DURATION_UPPER_LIMIT
                         動画の長さの上限の指定(分)
@@ -76,11 +80,10 @@ Slack通知は、以下のタイミングで行われます。
 ```bash
 $ python3 media_checker.py stdout --help
 
-usage: media_checker.py stdout [-h] --input INPUT --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
+usage: media_checker.py stdout [-h] --upper_limit DURATION_UPPER_LIMIT --lower_limit DURATION_LOWER_LIMIT
 
 optional arguments:
   -h, --help            show this help message and exit
-  --input INPUT         セッション動画格納先ディレクトリ
   --upper_limit DURATION_UPPER_LIMIT
                         動画の長さの上限の指定(分)
   --lower_limit DURATION_LOWER_LIMIT
@@ -90,7 +93,7 @@ optional arguments:
 ## How to Setup to put method
 `put method` は、`cron`にてX分おきに実行することを想定しています。  
 
-`put method`実行時は、スクリプトと同じディレクトリに配置されている変数ファイル(media_checker_env.json)を参照します。
+スクリプトと同じディレクトリに配置されている変数ファイル(media_checker_env.json)を参照します。
 media_checker_env.json 内の変数をあらかじめ更新してください。  
 `<CLIENT ID>`, `<CLIENT_SECRET>`に関しては、[DreamkastのREADME](https://github.com/cloudnativedaysjp/dreamkast#how-to-use-rest-api-for-videoregistration)を参照のこと。
 
@@ -99,7 +102,7 @@ media_checker_env.json 内の変数をあらかじめ更新してください。
 **media_checker.py put**
 下記形式でcronをセットする。
 ```
-python3 <SCRIPT DIR>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
+python3 <SCRIPT DIR>/media_checker.py put --input --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
 ```
 
 例えば、下記のようなディレクトリ構造の場合 かつ 動画の長さの判定基準が 20 ~ 45分の場合
@@ -119,7 +122,7 @@ python3 <SCRIPT DIR>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --up
 cronの設定は以下のようになる
 ```bash
 # cronjob for media_checker.py
-*/5 * * * * python3 <ROOT FOLDER OF MEDIAS>/media_checker.py put --input "<ROOT FOLDER OF MEDIAS>" --upper_limit "45" --lower_limit "20" --csv "<CSV FILE>"
+*/5 * * * * python3 <ROOT FOLDER OF MEDIAS>/media_checker.py put --upper_limit "45" --lower_limit "20" --csv "<CSV FILE>"
 ```
 
 
