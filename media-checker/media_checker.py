@@ -87,9 +87,7 @@ def command_put(args):
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
-    input_dir = args.input[0]
-    # 末尾に / が存在する場合に削除
-    input_dir = input_dir.rstrip('/')
+    input_dir = json_load['GROUPFOLDER_PATH'] + json_load['GLOUPFOLDER_ID']
 
     # CSVファイルを読み込んで、セッション単位で最新のファイルを特定する
     # CSVファイルの中身をlist形式で取得
@@ -112,12 +110,12 @@ def command_put(args):
     duration_upper_limit = int("".join(args.upper_limit))
     duration_lower_limit = int("".join(args.lower_limit))
 
-    list_of_dirs = glob.glob("".join(args.input) + '/*')
+    list_of_dirs = glob.glob("".join(input_dir) + '/*')
     for row in list_csv_file:
         for dirs in list_of_dirs:
             directory = dirs.split('/')[-1]
             if directory.split('_')[0] == row[0]:
-                list_of_files = glob.glob("".join(args.input) + '/' + row[0] + '*' + '/*.mp4')
+                list_of_files = glob.glob("".join(input_dir) + '/' + row[0] + '*' + '/*.mp4')
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
                     latest_file = max(list_of_files, key=os.path.getctime)
@@ -203,19 +201,24 @@ def command_put(args):
         'app',
         './occ',
         'groupfolder:scan',
-        '1'
+        json_load['GLOUPFOLDER_ID']
     ]
     subprocess.call(cmd, cwd='/home/ubuntu/nextcloud')
 
 
 def command_stdout(args):
+    json_open = open('./media_checker_env.json', 'r')
+    json_load = json.load(json_open)
+
+    input_dir = json_load['GROUPFOLDER_PATH'] + json_load['GLOUPFOLDER_ID']
+
     # 対象フォルダ配下の動画の情報をすべて標準出力する
     media_status = []
 
     duration_upper_limit = int("".join(args.upper_limit))
     duration_lower_limit = int("".join(args.lower_limit))
 
-    list_of_dirs = glob.glob("".join(args.input) + '/*')
+    list_of_dirs = glob.glob("".join(input_dir) + '/*')
     for list_of_each_dirs in list_of_dirs:
         list_of_files = glob.glob(list_of_each_dirs + '/*')
         for base_filename in list_of_files:
@@ -583,13 +586,6 @@ def get_args():
     parser_put = subparsers.add_parser('put',
                                        help='セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する')
 
-    parser_put.add_argument('--input',
-                            nargs=1,
-                            type=str,
-                            required=True,
-                            metavar='INPUT',
-                            help='セッション動画格納先ディレクトリ')
-
     parser_put.add_argument('--csv',
                             nargs=1,
                             type=str,
@@ -615,13 +611,6 @@ def get_args():
 
     parser_stdout = subparsers.add_parser('stdout',
                                           help='指定のディレクトリ配下の全ての動画の情報を標準出力する')
-
-    parser_stdout.add_argument('--input',
-                               nargs=1,
-                               type=str,
-                               required=True,
-                               metavar='INPUT',
-                               help='セッション動画格納先ディレクトリ')
 
     parser_stdout.add_argument('--upper_limit',
                                nargs=1,

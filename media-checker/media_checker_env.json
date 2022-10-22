@@ -5,5 +5,7 @@
     "AUDIENCE": "https://event.cloudnativedays.jp/",
     "TOKEN": "<TOKEN>",
     "DREAMKAST_DOMAIN": "event.cloudnativedays.jp",
-    "SLACKURL": "<SLACK WEBHOOK URL>"
+    "SLACKURL": "<SLACK WEBHOOK URL>",
+    "GROUPFOLDER_PATH": "/home/ubuntu/nextcloud/nextcloud-data/__groupfolders/",
+    "GLOUPFOLDER_ID": "<GLOUPFOLDER_ID>"
 }
