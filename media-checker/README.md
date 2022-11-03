@@ -102,7 +102,7 @@ media_checker_env.json 内の変数をあらかじめ更新してください。
 **media_checker.py put**
 下記形式でcronをセットする。
 ```
-python3 <SCRIPT DIR>/media_checker.py put --input --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
+python3 <SCRIPT DIR>/media_checker.py put --upper_limit "XX" --lower_limit "YY" --csv "<PATH TO CSV>"
 ```
 
 例えば、下記のようなディレクトリ構造の場合 かつ 動画の長さの判定基準が 20 ~ 45分の場合

@@ -299,7 +299,8 @@ def _get_media_info(filename):
     media_datas = json.loads(proc_mediainfo.stdout)
 
     for media_data in media_datas['streams']:
-        if media_data['codec_type'] == "video" and media_data['codec_name'] == "h264":
+        if media_data['codec_type'] == "video" \
+                and (media_data['codec_name'] == "h264" or media_data['codec_name'] == "hevc"):
             media_width = media_data['width']
             media_height = media_data['height']
             media_duration = int(media_data['duration'].split('.')[0])
