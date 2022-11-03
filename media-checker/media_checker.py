@@ -177,7 +177,7 @@ def command_put(args):
 
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
-                newpath_filename = print(row[1].replace('/', '_'))
+                newpath_filename = row[1].replace('/', '_')
                 newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
                 newpath_volmod = input_dir + "/" + directory + "/" + newpath_filename + "_mod.mp4"
 
