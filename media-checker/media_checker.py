@@ -116,6 +116,7 @@ def command_put(args):
             directory = dirs.split('/')[-1]
             if directory.split('_')[0] == row[0]:
                 list_of_files = glob.glob("".join(input_dir) + '/' + row[0] + '*' + '/*.mp4')
+                list_of_files.extend(glob.glob("".join(input_dir) + '/' + row[0] + '*' + '/*.mov'))
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
                     latest_file = max(list_of_files, key=os.path.getctime)
