@@ -238,7 +238,7 @@ def command_stdout(args):
             filename = base_filename.split('/')[-1]
 
             # ファイルがMP4形式ではない場合
-            if filename.split('.')[1] != "mp4":
+            if filename.split('.')[-1] != "mp4":
                 check_datetime = str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
                 non_mp4 = {
                         "status": "invalid_format",
