@@ -183,7 +183,7 @@ def command_put(args):
 
                 # 動画音量の規格化を行う(新旧ファイルを保持)
                 max_vol = _check_volume(latest_file)
-                if max_vol.split("-")[1] != "0.0":
+                if max_vol.split("-")[-1] != "0.0":
                     _volume_converter(max_vol, oldpath, newpath_volmod)
                 else:
                     if oldpath != newpath:
