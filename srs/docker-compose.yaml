@@ -1,6 +1,6 @@
 services:
   srs:
-    image: ossrs/srs:4
+    image: ossrs/srs:v5
     ports:
       - "10003:1935"
       - "10004:10080/udp"
