@@ -179,15 +179,16 @@ def command_put(args):
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
                 newpath_filename = row[0]
-                volmod_filename = row[1].replace('/', '_')
+                # volmod_filename = row[1].replace('/', '_')
                 newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
-                newpath_volmod = input_dir + "/" + directory + "/" + volmod_filename + "_mod.mp4"
+                # newpath_volmod = input_dir + "/" + directory + "/" + volmod_filename + "_mod.mp4"
 
                 # 動画音量の規格化を行う(新旧ファイルを保持)
                 max_vol = _check_volume(latest_file)
                 if max_vol.split("-")[-1] != "0.0":
-                    _volume_converter(max_vol, oldpath, newpath_volmod)
-                    shutil.copy(newpath_volmod, newpath)
+                    _volume_converter(max_vol, oldpath, newpath)
+                    # _volume_converter(max_vol, oldpath, newpath_volmod)
+                    # shutil.copy(newpath_volmod, newpath)
                     continue
 
                 if oldpath != newpath:
