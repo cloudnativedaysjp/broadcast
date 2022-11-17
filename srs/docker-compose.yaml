@@ -1,0 +1,12 @@
+services:
+  srs:
+    image: ossrs/srs:4
+    ports:
+      - "10003:1935"
+      - "10004:10080/udp"
+      - "10005:8080"
+      - "10006:1985"
+    volumes:
+      - "./srs.conf:/data/srs.conf"
+    command: "./objs/srs -c /data/srs.conf"
+    restart: always
