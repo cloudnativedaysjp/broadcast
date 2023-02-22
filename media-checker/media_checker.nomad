@@ -12,16 +12,16 @@ job "media_checker" {
 
     config {
       command = "/usr/bin/python3"
-      args = ["/opt/media_checker/media_checker.py", "put", "--upper_limit", "42", "--lower_limit", "0", "--csv", "/home/ubuntu/nextcloud/cfp.csv"]
+      args = ["/opt/broadcast/media_checker/media_checker.py", "put", "--upper_limit", "42", "--lower_limit", "0", "--csv", "/home/ubuntu/nextcloud/cfp.csv"]
     }
 
     env {
-      ENV_FILE = "/opt/media_checker/env.json"
+      ENV_FILE = "/opt/broadcast/media_checker/media_checker_env.json"
     }
 
     artifact {
-      source = "/opt/media_checker"
-      destination = "/opt/media_checker"
+      source = "/opt/broadcast/media_checker"
+      destination = "/opt/broadcast/media_checker"
     }
   }
 }
