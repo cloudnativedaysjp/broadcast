@@ -239,6 +239,32 @@ def command_put(args):
                         m3u8_filenamebase + "_1080.m3u8",
                     )
 
+                    m3u8_list = {
+                        "m3u8_360": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
+                        + "_360.m3u8",
+                        "m3u8_480": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
+                        + "_480.m3u8",
+                        "m3u8_720": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
+                        + "_720.m3u8",
+                        "m3u8_1080": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
+                        + "_1080.m3u8",
+                    }
+
+                    bandwidth_resolution_list = {
+                        "m3u8_360": "BANDWIDTH=128000,RESOLUTION=640x360",
+                        "m3u8_480": "BANDWIDTH=200000,RESOLUTION=854x480",
+                        "m3u8_720": "BANDWIDTH=350000,RESOLUTION=1280x720",
+                        "m3u8_1080": "BANDWIDTH=512000,RESOLUTION=1920x1080",
+                    }
+
+                    with open("output.m3u8", "w") as file:
+                        file.write("#EXTM3U\n")
+                        for key in m3u8_list:
+                            file.write(
+                                f"#EXT-X-STREAM-INF:{bandwidth_resolution_list[key]}\n"
+                            )
+                            file.write(m3u8_list[key] + "\n")
+
                     message = (
                         "`subject`: "
                         + latest_file
