@@ -208,63 +208,6 @@ def command_put(args):
                 if oldpath != newpath:
                     shutil.copy(oldpath, newpath)
 
-                    # 動画のm3u8化
-                    m3u8_filenamebase = newpath_filename.split(".")[0]
-                    _convert_to_m3u8(
-                        newpath,
-                        "40.4k",
-                        "128k",
-                        "640x360",
-                        m3u8_filenamebase + "_360.m3u8",
-                    )
-                    _convert_to_m3u8(
-                        newpath,
-                        "63.4k",
-                        "200k",
-                        "800x480",
-                        m3u8_filenamebase + "_480.m3u8",
-                    )
-                    _convert_to_m3u8(
-                        newpath,
-                        "63.4k",
-                        "350k",
-                        "1280x720",
-                        m3u8_filenamebase + "_720.m3u8",
-                    )
-                    _convert_to_m3u8(
-                        newpath,
-                        "63.4k",
-                        "512k",
-                        "1920x1080",
-                        m3u8_filenamebase + "_1080.m3u8",
-                    )
-
-                    m3u8_list = {
-                        "m3u8_360": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
-                        + "_360.m3u8",
-                        "m3u8_480": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
-                        + "_480.m3u8",
-                        "m3u8_720": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
-                        + "_720.m3u8",
-                        "m3u8_1080": m3u8_filenamebase.split(".")[0].rsplit("/", 1)[-1]
-                        + "_1080.m3u8",
-                    }
-
-                    bandwidth_resolution_list = {
-                        "m3u8_360": "BANDWIDTH=128000,RESOLUTION=640x360",
-                        "m3u8_480": "BANDWIDTH=200000,RESOLUTION=854x480",
-                        "m3u8_720": "BANDWIDTH=350000,RESOLUTION=1280x720",
-                        "m3u8_1080": "BANDWIDTH=512000,RESOLUTION=1920x1080",
-                    }
-
-                    with open("output.m3u8", "w") as file:
-                        file.write("#EXTM3U\n")
-                        for key in m3u8_list:
-                            file.write(
-                                f"#EXT-X-STREAM-INF:{bandwidth_resolution_list[key]}\n"
-                            )
-                            file.write(m3u8_list[key] + "\n")
-
                     message = (
                         "`subject`: "
                         + latest_file
@@ -661,63 +604,6 @@ def _volume_converter(max_vol, input_file, output_file):
         output_file,
     ]
     subprocess.Popen(proc_normalize_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-
-def _convert_to_m3u8(input_file, audio_bitrate, video_bitrate, resolution, output_file):
-    """
-    動画ファイルをm3u8形式に変換する
-
-    Args:
-        input_file(str): 変換元のファイル名
-        audio_bitrate(str): 音声のビットレート
-        video_bitrate(str): 映像のビットレート
-        resolution(str): 解像度
-        output_file(str): 変換後のファイル名
-    Returns:
-        None
-    """
-
-    proc_convert_cmd = [
-        "ffmpeg",
-        "-i",
-        input_file,
-        "-vcodec",
-        "libx264",
-        "-movflags",
-        "faststart",
-        "-acodec",
-        "aac",
-        "-strict",
-        "experimental",
-        "-b:a",
-        audio_bitrate,
-        "-ar",
-        "44100",
-        "-map",
-        "0",
-        "-flags",
-        "+loop-global_header",
-        "-profile:v",
-        "baseline",
-        "-level",
-        "3.0",
-        "-s",
-        resolution,
-        "-g",
-        "150",
-        "-b:v",
-        video_bitrate,
-        "-start_number",
-        "0",
-        "-hls_time",
-        "10",
-        "-hls_list_size",
-        "0",
-        "-f",
-        "hls",
-        output_file,
-    ]
-    subprocess.Popen(proc_convert_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def get_args():
