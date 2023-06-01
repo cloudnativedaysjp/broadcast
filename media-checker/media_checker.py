@@ -212,8 +212,7 @@ def command_put(args):
                         "`subject`: "
                         + latest_file
                         + "\r\n"
-                        + "`message`: mp4ならびにm3u8ファイルの生成が完了しました"
-                        + "```"
+                        + "`message`: 新規の動画が配置されました"
                     )
                     _send_to_slack(message, json_load["SLACKURL"])
 
