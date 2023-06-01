@@ -10,6 +10,7 @@ import json
 import jwt
 import subprocess
 import os
+import re
 import shutil
 import sys
 import urllib.request
@@ -153,28 +154,29 @@ def command_put(args):
 
                 # DkにAPI経由で動画情報を送る
                 talkid = row[0]
-                url = 'https://' + json_load['DREAMKAST_DOMAIN'] + '/api/v1/talks/' + talkid + '/video_registration'
-                header = {'Authorization': 'Bearer ' + json_load['TOKEN']}
-                put_data = json.dumps(media_status_dict, ensure_ascii=False)
+                if not re.compile('^900').search(talkid):
+                    url = 'https://' + json_load['DREAMKAST_DOMAIN'] + '/api/v1/talks/' + talkid + '/video_registration'
+                    header = {'Authorization': 'Bearer ' + json_load['TOKEN']}
+                    put_data = json.dumps(media_status_dict, ensure_ascii=False)
 
-                dk_req = urllib.request.Request(url,
-                                                headers=header,
-                                                data=put_data.encode(),
-                                                method='PUT')
+                    dk_req = urllib.request.Request(url,
+                                                    headers=header,
+                                                    data=put_data.encode(),
+                                                    method='PUT')
 
-                try:
-                    urllib.request.urlopen(dk_req)
-                except:
-                    # Dk連携が失敗した場合にSlack通知
-                    import traceback
-                    message = "`subject`: " + filename + '\r\n' +\
-                              "`reason`: Dk連携に失敗しました" + '\r\n' +\
-                              "`error detail`: " + '\r\n' +\
-                              "```" + '\r\n' +\
-                              traceback.format_exc() +\
-                              "```"
-                    _send_errlog_to_slack(message, json_load['SLACKURL'])
-                    sys.exit(1)
+                    try:
+                        urllib.request.urlopen(dk_req)
+                    except:
+                        # Dk連携が失敗した場合にSlack通知
+                        import traceback
+                        message = "`subject`: " + filename + '\r\n' +\
+                                  "`reason`: Dk連携に失敗しました" + '\r\n' +\
+                                  "`error detail`: " + '\r\n' +\
+                                  "```" + '\r\n' +\
+                                  traceback.format_exc() +\
+                                  "```"
+                        _send_errlog_to_slack(message, json_load['SLACKURL'])
+                        sys.exit(1)
 
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
@@ -208,7 +210,7 @@ def command_put(args):
         'groupfolder:scan',
         json_load['GLOUPFOLDER_ID']
     ]
-    subprocess.call(cmd, cwd='/home/ubuntu/nextcloud')
+    subprocess.call(cmd, cwd='/home/ubuntu/broadcast-config/nextcloud')
 
 
 def command_stdout(args):
