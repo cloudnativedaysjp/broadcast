@@ -19,37 +19,12 @@ import pytz
 
 # 要求解像度定義
 require_resolutions = [
-        {
-            "ratio": 0,
-            "type": "SD",
-            "width": 720,
-            "height": 480
-        },
-        {
-            "ratio": 1,
-            "type": "HD",
-            "width": 1280,
-            "height": 720
-        },
-        {
-            "ratio": 2,
-            "type": "FullHD",
-            "width": 1920,
-            "height": 1080
-        },
-        {
-            "ratio": 3,
-            "type": "WQHD",
-            "width": 2560,
-            "height": 1440
-        },
-        {
-            "ratio": 4,
-            "type": "4K",
-            "width": 4096,
-            "height": 2160
-        }
-    ]
+    {"ratio": 0, "type": "SD", "width": 720, "height": 480},
+    {"ratio": 1, "type": "HD", "width": 1280, "height": 720},
+    {"ratio": 2, "type": "FullHD", "width": 1920, "height": 1080},
+    {"ratio": 3, "type": "WQHD", "width": 2560, "height": 1440},
+    {"ratio": 4, "type": "4K", "width": 4096, "height": 2160},
+]
 
 # デフォルトの解像度判定基準
 lower_target_ratio = require_resolutions[1]["ratio"]
@@ -70,40 +45,45 @@ def main():
 
 def command_put(args):
     # 変数読み込み
-    json_open = open('./media_checker_env.json', 'r')
+    json_open = open("./media_checker_env.json", "r")
     json_load = json.load(json_open)
 
     # Dk API tokenの有効期限を確認し、期限切れの場合は更新する
-    if not _dk_token_check(json_load['TOKEN']):
-        _dk_token_update(json_load['AUTH0_DOMAIN'], json_load['AUDIENCE'], json_load['CLIENT_ID'], json_load['CLIENT_SECRET'])
+    if not _dk_token_check(json_load["TOKEN"]):
+        _dk_token_update(
+            json_load["AUTH0_DOMAIN"],
+            json_load["AUDIENCE"],
+            json_load["CLIENT_ID"],
+            json_load["CLIENT_SECRET"],
+        )
 
     # Dk連携用の変数がセットできていることを確認する
     # 環境変数($TOKEN/$DREAMKAST_DOMAIN)の確認
-    if json_load['TOKEN'] is None or \
-            json_load['DREAMKAST_DOMAIN'] is None:
+    if json_load["TOKEN"] is None or json_load["DREAMKAST_DOMAIN"] is None:
         # 環境変数の存在が確認できない場合、その旨をSlack通知し処理を終了する
-        message = "`subject`: $TOKEN or $DREAMKAST_DOMAIN" + '\r\n' +\
-                  "`reason`: 環境変数の読み込みに失敗しました"
-        _send_errlog_to_slack(message, json_load['SLACKURL'])
+        message = (
+            "`subject`: $TOKEN or $DREAMKAST_DOMAIN"
+            + "\r\n"
+            + "`reason`: 環境変数の読み込みに失敗しました"
+        )
+        _send_errlog_to_slack(message, json_load["SLACKURL"])
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
-    input_dir = json_load['GROUPFOLDER_PATH'] + json_load['GLOUPFOLDER_ID']
+    input_dir = json_load["GROUPFOLDER_PATH"] + json_load["GLOUPFOLDER_ID"]
 
     # CSVファイルを読み込んで、セッション単位で最新のファイルを特定する
     # CSVファイルの中身をlist形式で取得
-    csv_file = open("".join(args.csv),
-                    "r",
-                    encoding="utf_8",
-                    errors="",
-                    newline="")
+    csv_file = open("".join(args.csv), "r", encoding="utf_8", errors="", newline="")
 
-    list_csv_file = csv.reader(csv_file,
-                               delimiter=",",
-                               doublequote=True,
-                               lineterminator="\r\n",
-                               quotechar='"',
-                               skipinitialspace=True)
+    list_csv_file = csv.reader(
+        csv_file,
+        delimiter=",",
+        doublequote=True,
+        lineterminator="\r\n",
+        quotechar='"',
+        skipinitialspace=True,
+    )
 
     # CSVを一行ずつ判定し、セッション番号からはじまるフォルダがあれば後続処理、なければcontinue
     header = next(list_csv_file)
@@ -111,13 +91,17 @@ def command_put(args):
     duration_upper_limit = int("".join(args.upper_limit))
     duration_lower_limit = int("".join(args.lower_limit))
 
-    list_of_dirs = glob.glob("".join(input_dir) + '/*')
+    list_of_dirs = glob.glob("".join(input_dir) + "/*")
     for row in list_csv_file:
         for dirs in list_of_dirs:
-            directory = dirs.split('/')[-1]
-            if directory.split('_')[0] == row[0]:
-                list_of_files = glob.glob("".join(input_dir) + '/' + row[0] + '*' + '/*.mp4')
-                list_of_files.extend(glob.glob("".join(input_dir) + '/' + row[0] + '*' + '/*.mov'))
+            directory = dirs.split("/")[-1]
+            if directory.split("_")[0] == row[0]:
+                list_of_files = glob.glob(
+                    "".join(input_dir) + "/" + row[0] + "*" + "/*.mp4"
+                )
+                list_of_files.extend(
+                    glob.glob("".join(input_dir) + "/" + row[0] + "*" + "/*.mov")
+                )
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
                     latest_file = max(list_of_files, key=os.path.getctime)
@@ -125,57 +109,85 @@ def command_put(args):
                     continue
 
                 # .part がファイル名の末尾に付与されている場合は処理をスキップする
-                if latest_file.split('.')[-1] == "part":
+                if latest_file.split(".")[-1] == "part":
                     continue
 
                 # 最新ファイルの動画情報を生成する
                 try:
-                    media_width, media_height, media_duration, media_size = _get_media_info(latest_file)
+                    (
+                        media_width,
+                        media_height,
+                        media_duration,
+                        media_size,
+                    ) = _get_media_info(latest_file)
                 except (KeyError, UnboundLocalError):
                     # 動画情報の取得に失敗した場合にSlack通知
                     import traceback
-                    message = "`subject`: " + latest_file + '\r\n' +\
-                              "`reason`: 動画情報の取得に失敗しました" + '\r\n' +\
-                              "`error detail`: " + '\r\n' +\
-                              "```" + '\r\n' +\
-                              traceback.format_exc() +\
-                              "```"
-                    _send_errlog_to_slack(message, json_load['SLACKURL'])
+
+                    message = (
+                        "`subject`: "
+                        + latest_file
+                        + "\r\n"
+                        + "`reason`: 動画情報の取得に失敗しました"
+                        + "\r\n"
+                        + "`error detail`: "
+                        + "\r\n"
+                        + "```"
+                        + "\r\n"
+                        + traceback.format_exc()
+                        + "```"
+                    )
+                    _send_errlog_to_slack(message, json_load["SLACKURL"])
                     continue
 
                 filename = row[1] + ".mp4"
-                media_status_dict = _create_media_status(media_width,
-                                                         media_height,
-                                                         media_duration,
-                                                         media_size,
-                                                         duration_upper_limit,
-                                                         duration_lower_limit,
-                                                         filename)
+                media_status_dict = _create_media_status(
+                    media_width,
+                    media_height,
+                    media_duration,
+                    media_size,
+                    duration_upper_limit,
+                    duration_lower_limit,
+                    filename,
+                )
 
                 # DkにAPI経由で動画情報を送る
                 talkid = row[0]
-                if not re.compile('^900').search(talkid):
-                    url = 'https://' + json_load['DREAMKAST_DOMAIN'] + '/api/v1/talks/' + talkid + '/video_registration'
-                    header = {'Authorization': 'Bearer ' + json_load['TOKEN']}
+                if not re.compile("^900").search(talkid):
+                    url = (
+                        "https://"
+                        + json_load["DREAMKAST_DOMAIN"]
+                        + "/api/v1/talks/"
+                        + talkid
+                        + "/video_registration"
+                    )
+                    header = {"Authorization": "Bearer " + json_load["TOKEN"]}
                     put_data = json.dumps(media_status_dict, ensure_ascii=False)
 
-                    dk_req = urllib.request.Request(url,
-                                                    headers=header,
-                                                    data=put_data.encode(),
-                                                    method='PUT')
+                    dk_req = urllib.request.Request(
+                        url, headers=header, data=put_data.encode(), method="PUT"
+                    )
 
                     try:
                         urllib.request.urlopen(dk_req)
                     except:
                         # Dk連携が失敗した場合にSlack通知
                         import traceback
-                        message = "`subject`: " + filename + '\r\n' +\
-                                  "`reason`: Dk連携に失敗しました" + '\r\n' +\
-                                  "`error detail`: " + '\r\n' +\
-                                  "```" + '\r\n' +\
-                                  traceback.format_exc() +\
-                                  "```"
-                        _send_errlog_to_slack(message, json_load['SLACKURL'])
+
+                        message = (
+                            "`subject`: "
+                            + filename
+                            + "\r\n"
+                            + "`reason`: Dk連携に失敗しました"
+                            + "\r\n"
+                            + "`error detail`: "
+                            + "\r\n"
+                            + "```"
+                            + "\r\n"
+                            + traceback.format_exc()
+                            + "```"
+                        )
+                        _send_errlog_to_slack(message, json_load["SLACKURL"])
                         sys.exit(1)
 
                 # Dk連携が完了後、動画をRename
@@ -201,23 +213,23 @@ def command_put(args):
 
     # 処理の最後にフォルダの再スキャン
     cmd = [
-        'docker-compose',
-        'exec',
-        '-u',
-        'www-data',
-        'app',
-        './occ',
-        'groupfolder:scan',
-        json_load['GLOUPFOLDER_ID']
+        "docker-compose",
+        "exec",
+        "-u",
+        "www-data",
+        "app",
+        "./occ",
+        "groupfolder:scan",
+        json_load["GLOUPFOLDER_ID"],
     ]
-    subprocess.call(cmd, cwd='/home/ubuntu/broadcast-config/nextcloud')
+    subprocess.call(cmd, cwd="/home/ubuntu/broadcast-config/nextcloud")
 
 
 def command_stdout(args):
-    json_open = open('./media_checker_env.json', 'r')
+    json_open = open("./media_checker_env.json", "r")
     json_load = json.load(json_open)
 
-    input_dir = json_load['GROUPFOLDER_PATH'] + json_load['GLOUPFOLDER_ID']
+    input_dir = json_load["GROUPFOLDER_PATH"] + json_load["GLOUPFOLDER_ID"]
 
     # 対象フォルダ配下の動画の情報をすべて標準出力する
     media_status = []
@@ -225,46 +237,54 @@ def command_stdout(args):
     duration_upper_limit = int("".join(args.upper_limit))
     duration_lower_limit = int("".join(args.lower_limit))
 
-    list_of_dirs = glob.glob("".join(input_dir) + '/*')
+    list_of_dirs = glob.glob("".join(input_dir) + "/*")
     for list_of_each_dirs in list_of_dirs:
-        list_of_files = glob.glob(list_of_each_dirs + '/*')
+        list_of_files = glob.glob(list_of_each_dirs + "/*")
         for base_filename in list_of_files:
             try:
-                media_width, media_height, media_duration, media_size = _get_media_info(base_filename)
+                media_width, media_height, media_duration, media_size = _get_media_info(
+                    base_filename
+                )
             except (KeyError, UnboundLocalError):
                 err_body = {
-                        "status": "invalid_format",
-                        "statistics": {
-                            "ファイル名": base_filename,
-                            "ファイルフォーマット": "ファイルの読み込みに失敗しました"
-                            }
-                        }
+                    "status": "invalid_format",
+                    "statistics": {
+                        "ファイル名": base_filename,
+                        "ファイルフォーマット": "ファイルの読み込みに失敗しました",
+                    },
+                }
                 media_status.append(err_body)
                 continue
 
-            filename = base_filename.split('/')[-1]
+            filename = base_filename.split("/")[-1]
 
             # ファイルがMP4形式ではない場合
-            if filename.split('.')[-1] != "mp4":
-                check_datetime = str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
+            if filename.split(".")[-1] != "mp4":
+                check_datetime = str(
+                    datetime.datetime.now(pytz.timezone("Asia/Tokyo")).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                )
                 non_mp4 = {
-                        "status": "invalid_format",
-                        "statistics": {
-                            "ファイル名": base_filename,
-                            "最終チェック日時": check_datetime,
-                            "ファイルフォーマット": "ファイルの読み込みに失敗しました(non mp4 format)"
-                            }
-                        }
+                    "status": "invalid_format",
+                    "statistics": {
+                        "ファイル名": base_filename,
+                        "最終チェック日時": check_datetime,
+                        "ファイルフォーマット": "ファイルの読み込みに失敗しました(non mp4 format)",
+                    },
+                }
                 media_status.append(non_mp4)
 
             else:
-                media_status_dict = _create_media_status(media_width,
-                                                        media_height,
-                                                        media_duration,
-                                                        media_size,
-                                                        duration_upper_limit,
-                                                        duration_lower_limit,
-                                                        filename)
+                media_status_dict = _create_media_status(
+                    media_width,
+                    media_height,
+                    media_duration,
+                    media_size,
+                    duration_upper_limit,
+                    duration_lower_limit,
+                    filename,
+                )
 
                 media_status_dict["statistics"]["ファイル名"] = base_filename
 
@@ -288,42 +308,41 @@ def _get_media_info(filename):
 
     # 指定したフォルダ配下の動画の情報を取得する
     get_proc_cmd = [
-            'ffprobe',
-            '-hide_banner',
-            '-show_streams',
-            '-show_format',
-            '-of',
-            'json',
-            str(filename)
-        ]
+        "ffprobe",
+        "-hide_banner",
+        "-show_streams",
+        "-show_format",
+        "-of",
+        "json",
+        str(filename),
+    ]
 
     proc_mediainfo = subprocess.run(
-            get_proc_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+        get_proc_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
     media_datas = json.loads(proc_mediainfo.stdout)
 
-    for media_data in media_datas['streams']:
-        if media_data['codec_type'] == "video" \
-                and (media_data['codec_name'] == "h264" or media_data['codec_name'] == "hevc"):
-            media_width = media_data['width']
-            media_height = media_data['height']
-            media_duration = int(media_data['duration'].split('.')[0])
+    for media_data in media_datas["streams"]:
+        if media_data["codec_type"] == "video" and (
+            media_data["codec_name"] == "h264" or media_data["codec_name"] == "hevc"
+        ):
+            media_width = media_data["width"]
+            media_height = media_data["height"]
+            media_duration = int(media_data["duration"].split(".")[0])
     media_size = os.path.getsize(filename)
 
     return media_width, media_height, media_duration, media_size
 
 
 def _create_media_status(
-        media_width,
-        media_height,
-        media_duration,
-        media_size,
-        duration_upper_limit,
-        duration_lower_limit,
-        filename):
+    media_width,
+    media_height,
+    media_duration,
+    media_size,
+    duration_upper_limit,
+    duration_lower_limit,
+    filename,
+):
     """
     ファイルごとに動画情報を生成する
 
@@ -339,23 +358,32 @@ def _create_media_status(
         media_status_dict(dict): Dk上にAPI経由で送る動画情報
     """
     # 現在時刻の取得
-    check_datetime = str(datetime.datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y-%m-%d %H:%M:%S"))
+    check_datetime = str(
+        datetime.datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%Y-%m-%d %H:%M:%S")
+    )
 
     # 解像度チェック
-    if media_width < require_resolutions[lower_target_ratio]["width"] or \
-            media_height < require_resolutions[lower_target_ratio]["height"]:
+    if (
+        media_width < require_resolutions[lower_target_ratio]["width"]
+        or media_height < require_resolutions[lower_target_ratio]["height"]
+    ):
         resolution_status = "NG"
-    elif require_resolutions[upper_target_ratio]["width"] < media_width or \
-            require_resolutions[upper_target_ratio]["height"] < media_height:
+    elif (
+        require_resolutions[upper_target_ratio]["width"] < media_width
+        or require_resolutions[upper_target_ratio]["height"] < media_height
+    ):
         resolution_status = "NG"
     else:
         resolution_status = "OK"
     resolution_type = "NON STANDARD"
 
     # アスペクト比チェック
-    if media_width % horizontal_criteria_ratio == 0 and \
-            media_height % vertical_criteria_ratio == 0 and \
-            media_width // horizontal_criteria_ratio == media_height // vertical_criteria_ratio:
+    if (
+        media_width % horizontal_criteria_ratio == 0
+        and media_height % vertical_criteria_ratio == 0
+        and media_width // horizontal_criteria_ratio
+        == media_height // vertical_criteria_ratio
+    ):
         aspect_status = "OK"
         aspect_ratio = "16:9"
     else:
@@ -365,14 +393,14 @@ def _create_media_status(
     # 解像度が標準規格に沿っているかをチェックする
     for resolution_definition in require_resolutions:
         # check if standard
-        if media_width == resolution_definition["width"] and \
-                media_height == resolution_definition["height"]:
+        if (
+            media_width == resolution_definition["width"]
+            and media_height == resolution_definition["height"]
+        ):
             set_ratio = resolution_definition["ratio"]
-            if set_ratio == lower_target_ratio or \
-                    set_ratio == upper_target_ratio:
+            if set_ratio == lower_target_ratio or set_ratio == upper_target_ratio:
                 resolution_status = "OK"
-            elif set_ratio != lower_target_ratio or \
-                    set_ratio != upper_target_ratio:
+            elif set_ratio != lower_target_ratio or set_ratio != upper_target_ratio:
                 resolution_status = "NG"
             resolution_type = resolution_definition["type"]
 
@@ -397,7 +425,7 @@ def _create_media_status(
 
     # 動画のサイズチェック(if True)
     if size_flag:
-        media_size_mib = media_size // (1024*1024)
+        media_size_mib = media_size // (1024 * 1024)
         if media_size_mib >= size_upper_limit:
             size_status = "NG"
             size_description = "基準値（{}MB）を超えています".format(size_upper_limit)
@@ -417,13 +445,11 @@ def _create_media_status(
             "アスペクト比チェック": aspect_status,
             "アスペクト比": aspect_ratio,
             "動画の長さチェック": duration_status,
-            "動画の長さコメント": duration_description
-            }
-        }
+            "動画の長さコメント": duration_description,
+        },
+    }
 
-    if resolution_status != "OK" or \
-            aspect_status != "OK" or \
-            duration_status != "OK":
+    if resolution_status != "OK" or aspect_status != "OK" or duration_status != "OK":
         media_status_dict["status"] = "invalid_format"
 
     if size_status:
@@ -444,16 +470,13 @@ def _send_errlog_to_slack(message, slack_url):
         slack_url(str): Slack webhook url
     Returns:
     """
-    header = {'content-type': 'application/json'}
-    base_data = {
-            "text": message
-            }
+    header = {"content-type": "application/json"}
+    base_data = {"text": message}
     post_data = json.dumps(base_data, ensure_ascii=False).encode()
 
-    slack_req = urllib.request.Request(slack_url,
-                                       headers=header,
-                                       data=post_data,
-                                       method='POST')
+    slack_req = urllib.request.Request(
+        slack_url, headers=header, data=post_data, method="POST"
+    )
 
     urllib.request.urlopen(slack_req)
 
@@ -468,7 +491,7 @@ def _dk_token_check(token):
         (bool): tokenの期限切れでない場合はTrue
     """
     token_payload = jwt.decode(token, options={"verify_signature": False})
-    token_expire = datetime.datetime.fromtimestamp(token_payload['exp'])
+    token_expire = datetime.datetime.fromtimestamp(token_payload["exp"])
 
     if datetime.datetime.now() < token_expire:
         return True
@@ -488,34 +511,30 @@ def _dk_token_update(domain, audience, client_id, client_secret):
     Returns:
         None
     """
-    url = 'https://' + domain + '/oauth/token'
-    header = {
-        "content-type": "application/json"
-    }
+    url = "https://" + domain + "/oauth/token"
+    header = {"content-type": "application/json"}
     data = {
         "client_id": "",
         "client_secret": "",
         "audience": "",
-        "grant_type": "client_credentials"
+        "grant_type": "client_credentials",
     }
-    data['audience'] = audience
-    data['client_id'] = client_id
-    data['client_secret'] = client_secret
+    data["audience"] = audience
+    data["client_id"] = client_id
+    data["client_secret"] = client_secret
 
-    req = urllib.request.Request(url,
-                                 headers=header,
-                                 data=json.dumps(data).encode(),
-                                 method='POST'
-                                 )
+    req = urllib.request.Request(
+        url, headers=header, data=json.dumps(data).encode(), method="POST"
+    )
 
     res = urllib.request.urlopen(req)
     body = json.load(res)
 
-    with open('./media_checker_env.json') as env:
+    with open("./media_checker_env.json") as env:
         update_env = json.load(env, object_pairs_hook=OrderedDict)
-        update_env['TOKEN'] = body['access_token']
+        update_env["TOKEN"] = body["access_token"]
 
-    with open('./media_checker_env.json', 'w') as f:
+    with open("./media_checker_env.json", "w") as f:
         json.dump(update_env, f, indent=4, ensure_ascii=False)
 
 
@@ -529,21 +548,19 @@ def _check_volume(filename):
         output_max(str): 動画の最大音量
     """
     proc_maxVolume_cmd = [
-            "ffmpeg",
-            "-i",
-            filename,
-            "-vn",
-            "-af",
-            "volumedetect",
-            "-f",
-            "null",
-            "-"
-        ]
+        "ffmpeg",
+        "-i",
+        filename,
+        "-vn",
+        "-af",
+        "volumedetect",
+        "-f",
+        "null",
+        "-",
+    ]
     proc_maxVolume = subprocess.Popen(
-            proc_maxVolume_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        proc_maxVolume_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
 
     output = str(proc_maxVolume.stderr.read().decode())
     output_max = output.split("max_volume: ")[1].split(" dB")[0]
@@ -565,80 +582,88 @@ def _volume_converter(max_vol, input_file, output_file):
     if "-" in max_vol:
         calc_val = max_vol.split("-")[1]
     else:
-        calc_val = "-"+str(max_vol)
+        calc_val = "-" + str(max_vol)
 
     proc_normalize_cmd = [
-            "ffmpeg",
-            "-i",
-            input_file,
-            "-vcodec",
-            "copy",
-            "-af",
-            'volume={}dB'.format(calc_val),
-            output_file
-        ]
-    subprocess.Popen(
-            proc_normalize_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        "ffmpeg",
+        "-i",
+        input_file,
+        "-vcodec",
+        "copy",
+        "-af",
+        "volume={}dB".format(calc_val),
+        output_file,
+    ]
+    subprocess.Popen(proc_normalize_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        description="""
     動画の情報を取得し、判定条件を満たしているか否かを判定する
-    """)
+    """
+    )
 
     subparsers = parser.add_subparsers()
 
-    parser_put = subparsers.add_parser('put',
-                                       help='セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する')
+    parser_put = subparsers.add_parser(
+        "put", help="セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する"
+    )
 
-    parser_put.add_argument('--csv',
-                            nargs=1,
-                            type=str,
-                            required=True,
-                            metavar='CSV_FILE',
-                            help='セッションのCSVリスト')
+    parser_put.add_argument(
+        "--csv",
+        nargs=1,
+        type=str,
+        required=True,
+        metavar="CSV_FILE",
+        help="セッションのCSVリスト",
+    )
 
-    parser_put.add_argument('--upper_limit',
-                            nargs=1,
-                            type=str,
-                            required=True,
-                            metavar='DURATION_UPPER_LIMIT',
-                            help='動画の長さの上限の指定(分)')
+    parser_put.add_argument(
+        "--upper_limit",
+        nargs=1,
+        type=str,
+        required=True,
+        metavar="DURATION_UPPER_LIMIT",
+        help="動画の長さの上限の指定(分)",
+    )
 
-    parser_put.add_argument('--lower_limit',
-                            nargs=1,
-                            type=str,
-                            required=True,
-                            metavar='DURATION_LOWER_LIMIT',
-                            help='動画の長さの下限の指定(分)')
+    parser_put.add_argument(
+        "--lower_limit",
+        nargs=1,
+        type=str,
+        required=True,
+        metavar="DURATION_LOWER_LIMIT",
+        help="動画の長さの下限の指定(分)",
+    )
 
     parser_put.set_defaults(handler=command_put)
 
-    parser_stdout = subparsers.add_parser('stdout',
-                                          help='指定のディレクトリ配下の全ての動画の情報を標準出力する')
+    parser_stdout = subparsers.add_parser("stdout", help="指定のディレクトリ配下の全ての動画の情報を標準出力する")
 
-    parser_stdout.add_argument('--upper_limit',
-                               nargs=1,
-                               type=str,
-                               required=True,
-                               metavar='DURATION_UPPER_LIMIT',
-                               help='動画の長さの上限の指定(分)')
+    parser_stdout.add_argument(
+        "--upper_limit",
+        nargs=1,
+        type=str,
+        required=True,
+        metavar="DURATION_UPPER_LIMIT",
+        help="動画の長さの上限の指定(分)",
+    )
 
-    parser_stdout.add_argument('--lower_limit',
-                               nargs=1,
-                               type=str,
-                               required=True,
-                               metavar='DURATION_LOWER_LIMIT',
-                               help='動画の長さの下限の指定(分)')
+    parser_stdout.add_argument(
+        "--lower_limit",
+        nargs=1,
+        type=str,
+        required=True,
+        metavar="DURATION_LOWER_LIMIT",
+        help="動画の長さの下限の指定(分)",
+    )
 
     parser_stdout.set_defaults(handler=command_stdout)
 
     args = parser.parse_args()
 
-    if hasattr(args, 'handler'):
+    if hasattr(args, "handler"):
         return args
     else:
         parser.print_help()
