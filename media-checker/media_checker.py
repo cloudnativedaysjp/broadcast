@@ -66,7 +66,7 @@ def command_put(args):
             + "\r\n"
             + "`reason`: 環境変数の読み込みに失敗しました"
         )
-        _send_errlog_to_slack(message, json_load["SLACKURL"])
+        _send_to_slack(message, json_load["SLACKURL"])
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
@@ -137,7 +137,7 @@ def command_put(args):
                         + traceback.format_exc()
                         + "```"
                     )
-                    _send_errlog_to_slack(message, json_load["SLACKURL"])
+                    _send_to_slack(message, json_load["SLACKURL"])
                     continue
 
                 filename = row[1] + ".mp4"
@@ -187,7 +187,7 @@ def command_put(args):
                             + traceback.format_exc()
                             + "```"
                         )
-                        _send_errlog_to_slack(message, json_load["SLACKURL"])
+                        _send_to_slack(message, json_load["SLACKURL"])
                         sys.exit(1)
 
                 # Dk連携が完了後、動画をRename
@@ -238,6 +238,15 @@ def command_put(args):
                         "1920x1080",
                         m3u8_filenamebase + "_1080.m3u8",
                     )
+
+                    message = (
+                        "`subject`: "
+                        + latest_file
+                        + "\r\n"
+                        + "`message`: mp4ならびにm3u8ファイルの生成が完了しました"
+                        + "```"
+                    )
+                    _send_to_slack(message, json_load["SLACKURL"])
 
             else:
                 continue
@@ -492,7 +501,7 @@ def _create_media_status(
     return media_status_dict
 
 
-def _send_errlog_to_slack(message, slack_url):
+def _send_to_slack(message, slack_url):
     """
     動画チェックの処理に失敗した際にSlack通知する
 
