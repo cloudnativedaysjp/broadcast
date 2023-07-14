@@ -1,11 +1,12 @@
 {
-    "AUTH0_DOMAIN": "dreamkast.us.auth0.com",
-    "CLIENT_ID": "<CLIENT_ID>",
-    "CLIENT_SECRET": "<CLIENT_SECRET>",
-    "AUDIENCE": "https://event.cloudnativedays.jp/",
-    "TOKEN": "<TOKEN>",
-    "DREAMKAST_DOMAIN": "event.cloudnativedays.jp",
-    "SLACKURL": "<SLACK WEBHOOK URL>",
-    "GROUPFOLDER_PATH": "/home/ubuntu/nextcloud/nextcloud-data/__groupfolders/",
-    "GLOUPFOLDER_ID": "<GLOUPFOLDER_ID>"
+  "AUTH0_DOMAIN": "dreamkast.us.auth0.com",
+  "CLIENT_ID": "<CLIENT_ID>",
+  "CLIENT_SECRET": "<CLIENT_SECRET>",
+  "AUDIENCE": "https://event.cloudnativedays.jp/",
+  "TOKEN": "<TOKEN>",
+  "DREAMKAST_DOMAIN": "event.cloudnativedays.jp",
+  "SLACKURL": "<SLACK WEBHOOK URL>",
+  "GROUPFOLDER_PATH": "/home/ubuntu/nextcloud/nextcloud-data/__groupfolders/",
+  "GLOUPFOLDER_ID": "<GLOUPFOLDER_ID>",
+  "EVENT_ABBR": "<EVENT_ABBR>"
 }

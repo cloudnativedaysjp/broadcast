@@ -11,6 +11,7 @@ import jwt
 import subprocess
 import os
 import re
+import requests
 import shutil
 import sys
 import urllib.request
@@ -72,35 +73,25 @@ def command_put(args):
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
     input_dir = json_load["GROUPFOLDER_PATH"] + json_load["GLOUPFOLDER_ID"]
 
-    # CSVファイルを読み込んで、セッション単位で最新のファイルを特定する
-    # CSVファイルの中身をlist形式で取得
-    csv_file = open("".join(args.csv), "r", encoding="utf_8", errors="", newline="")
+    # talksリストの取得
+    talks = _create_talks(json_load["DREAMKAST_DOMAIN"], json_load["EVENT_ABBR"])
 
-    list_csv_file = csv.reader(
-        csv_file,
-        delimiter=",",
-        doublequote=True,
-        lineterminator="\r\n",
-        quotechar='"',
-        skipinitialspace=True,
-    )
-
-    # CSVを一行ずつ判定し、セッション番号からはじまるフォルダがあれば後続処理、なければcontinue
-    header = next(list_csv_file)
-
+    # セッション番号からはじまるフォルダがあれば後続処理、なければcontinue
     duration_upper_limit = int("".join(args.upper_limit))
     duration_lower_limit = int("".join(args.lower_limit))
 
     list_of_dirs = glob.glob("".join(input_dir) + "/*")
-    for row in list_csv_file:
+    for talk in talks:
+        talk_id = talk["id"]
+        talk_title = talk["title"]
         for dirs in list_of_dirs:
             directory = dirs.split("/")[-1]
-            if directory.split("_")[0] == row[0]:
+            if directory.split("_")[0] == talk_id:
                 list_of_files = glob.glob(
-                    "".join(input_dir) + "/" + row[0] + "*" + "/*.mp4"
+                    "".join(input_dir) + "/" + talk_id + "*" + "/*.mp4"
                 )
                 list_of_files.extend(
-                    glob.glob("".join(input_dir) + "/" + row[0] + "*" + "/*.mov")
+                    glob.glob("".join(input_dir) + "/" + talk_id + "*" + "/*.mov")
                 )
                 # フォルダ内の最新のファイルをフルパスで取得する
                 try:
@@ -140,7 +131,7 @@ def command_put(args):
                     _send_to_slack(message, json_load["SLACKURL"])
                     continue
 
-                filename = row[1] + ".mp4"
+                filename = talk_title + ".mp4"
                 media_status_dict = _create_media_status(
                     media_width,
                     media_height,
@@ -152,7 +143,7 @@ def command_put(args):
                 )
 
                 # DkにAPI経由で動画情報を送る
-                talkid = row[0]
+                talkid = talk_id
                 if not re.compile("^900").search(talkid):
                     url = (
                         "https://"
@@ -192,8 +183,8 @@ def command_put(args):
 
                 # Dk連携が完了後、動画をRename
                 oldpath = latest_file
-                newpath_filename = row[0]
-                # volmod_filename = row[1].replace('/', '_')
+                newpath_filename = talk_id
+                # volmod_filename = talk_title.replace('/', '_')
                 newpath = input_dir + "/" + directory + "/" + newpath_filename + ".mp4"
                 # newpath_volmod = input_dir + "/" + directory + "/" + volmod_filename + "_mod.mp4"
 
@@ -546,6 +537,71 @@ def _dk_token_update(domain, audience, client_id, client_secret):
         json.dump(update_env, f, indent=4, ensure_ascii=False)
 
 
+def _get_talks(dk_url, event_abbr, conference_day_id):
+    talks = []
+
+    req_url = f"https://{dk_url}/api/v1/talks?eventAbbr={event_abbr}&conferenceDayIds={conference_day_id}"
+    res = requests.get(req_url)
+    res.raise_for_status()
+    res_payload = res.json()
+
+    for talk in res_payload:
+        talks.append(talk)
+
+    return talks
+
+
+def _create_talks(dk_url, event_abbr):
+    """
+    Args:
+        dk_url(str): json_load["DREAMKAST_DOMAIN"]
+        event_abbr(str): json_load["EVENT_ABBR"]
+
+    Returns:
+        talks(list): イベントのtalk一覧
+    """
+    # get conference day id
+    req_url = "https://" + dk_url + "/api/v1/events"
+    res = requests.get(req_url)
+    res.raise_for_status()
+    res_payload = res.json()
+
+    # get event id
+    i = 0
+    event_list_position = 0
+    for event in res_payload:
+        if event["abbr"] == event_abbr:
+            event_list_position = i
+        i += 1
+
+    conference_day_ids = res_payload[event_list_position]["conferenceDays"]
+
+    # get tracks
+    req_url = "https://" + dk_url + "/api/v1/tracks?eventAbbr={}".format(event_abbr)
+    res = requests.get(req_url)
+    res.raise_for_status()
+    tracks_list = res.json()
+
+    talks = list()
+
+    for day_id in conference_day_ids:
+        if day_id["internal"]:
+            continue
+
+        for track in tracks_list:
+            for talk in _get_talks(dk_url, event_abbr, day_id["id"]):
+                if not track["id"] == talk["trackId"]:
+                    continue
+
+                insert_talk = {
+                    "id": talk["id"],
+                    "title": talk["title"],
+                }
+                talks.append(insert_talk)
+
+    return talks
+
+
 def _check_volume(filename):
     """
     動画の音量を確認する
@@ -616,15 +672,6 @@ def get_args():
 
     parser_put = subparsers.add_parser(
         "put", help="セッションの最新ファイルごとに動画のチェック結果をDkにAPI経由で連携する"
-    )
-
-    parser_put.add_argument(
-        "--csv",
-        nargs=1,
-        type=str,
-        required=True,
-        metavar="CSV_FILE",
-        help="セッションのCSVリスト",
     )
 
     parser_put.add_argument(
