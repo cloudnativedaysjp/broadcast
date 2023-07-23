@@ -71,7 +71,12 @@ def command_put(args):
         sys.exit(1)
 
     # 動画が格納されているフォルダの第一階層のフォルダ名を取得する
-    input_dir = json_load["GROUPFOLDER_PATH"] + json_load["GLOUPFOLDER_ID"]
+    input_dir = (
+        json_load["GROUPFOLDER_PATH"]
+        + json_load["GLOUPFOLDER_ID"]
+        + "/*"
+        + json_load["EVENT_ABBR"]
+    )
 
     # talksリストの取得
     talks = _create_talks(json_load["DREAMKAST_DOMAIN"], json_load["EVENT_ABBR"])
@@ -228,7 +233,12 @@ def command_stdout(args):
     json_open = open("./media_checker_env.json", "r")
     json_load = json.load(json_open)
 
-    input_dir = json_load["GROUPFOLDER_PATH"] + json_load["GLOUPFOLDER_ID"]
+    input_dir = (
+        json_load["GROUPFOLDER_PATH"]
+        + json_load["GLOUPFOLDER_ID"]
+        + "/*"
+        + json_load["EVENT_ABBR"]
+    )
 
     # 対象フォルダ配下の動画の情報をすべて標準出力する
     media_status = []
