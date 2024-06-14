@@ -3,7 +3,10 @@ $ProgressPreference = 'SilentlyContinue'
 cd ~/Downloads
 echo "Downloading installer.."
 echo "Start downloading winget-cli"
-Invoke-WebRequest -UseBasicParsing -Uri https://github.com/microsoft/winget-cli/releases/download/v1.6.3133/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -OutFile .\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+Invoke-WebRequest -UseBasicParsing -Uri https://github.com/microsoft/winget-cli/releases/download/v1.9.1551-preview/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -OutFile .\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+
+
+
 echo "Start downloading VCLibs"
 Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile Microsoft.VCLibs.x64.14.00.Desktop.appx
 echo "Start downloading companion-module-roland-vr6hd"
